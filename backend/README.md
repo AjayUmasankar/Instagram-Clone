@@ -6,6 +6,7 @@ You can use virtual env [recommended].
 cd backend
 # create a sandbox for the backend
 virtualenv -p /usr/local/bin/python3 env
+virtualenv -p python3 env
 # enter sandbox
 source env/bin/activate
 # set up sandbox

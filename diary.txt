@@ -1,1 +1,6 @@
-13/10/18     18:00   18:15   put the first real entry in diary.txt (delete this line!)
+18/10/18     5pm - 6pm  Implemented login for subset0, cheked against given users.js file and 
+console.logs depending on if the login was successful
+
+19/10/18	 5pm - 6.30pm 	Implemented the rest of subset0 (register and Feed interface)
+
+19/10/18	 7pm - 

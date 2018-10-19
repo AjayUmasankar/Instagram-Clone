@@ -38,4 +38,15 @@ export default class API {
         return this.makeAPIRequest('me.json');
     }
 
+    getUsers() {
+        return this.makeAPIRequest('users.json');
+    }
+
+        /**
+     * 
+     */
+    getFile(file) {
+        return this.makeAPIRequest('file.json');
+    }
+
 }

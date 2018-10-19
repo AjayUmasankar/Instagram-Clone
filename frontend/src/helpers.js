@@ -37,12 +37,33 @@ export function createElement(tag, data, options = {}) {
 export function createPostTile(post) {
     const section = createElement('section', null, { class: 'post' });
 
+    // who the post was made by
     section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
 
+    // The post description text
+    section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
+
+    // The image itself
     section.appendChild(createElement('img', null, 
         { src: '/images/'+post.src, alt: post.meta.description_text, class: 'post-image' }));
 
+    // How many likes it has (or none)
+    section.appendChild(createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'}));
+
+    // How many comments the post has
+    section.appendChild(createElement('p', `${post.meta.comments.length} comments`, {class: 'post-desc'}));
+
+    // when it was posted
+    section.appendChild(createElement('p', post.meta.published, {class: 'post-desc'}));
+
     return section;
+
+
+
+
+
+
+
 }
 
 // Given an input element of type=file, grab the data uploaded for use

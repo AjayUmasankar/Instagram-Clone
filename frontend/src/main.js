@@ -8,10 +8,8 @@ const api  = new API();
 
 (async function() {
 	// we can use this single api request multiple times
-	const feedPromise = api.getFeed();
-
-
-	feedPromise
+	const staticFeed = api.getStaticFeed();
+	staticFeed
 	.then(posts => {
 	    posts.reduce((parent, post) => {
 
@@ -21,6 +19,14 @@ const api  = new API();
 
 	    }, document.getElementById('large-feed'))
 	});
+
+	// const getDummyFeed = api.getDummyFeed(			
+	// 						{
+	// 						    headers: { "Content-Type": 'application/json' },
+	// 						    method: "GET",
+	// 						})
+	// 					.then(data => console.log(data));
+
 
 	// Potential example to upload an image
 	const input = document.querySelector('input[type="file"]');
@@ -40,9 +46,24 @@ const api  = new API();
 	// name text box
 	var name = document.createElement("INPUT");
 	name.setAttribute("type", "text");
-	name.setAttribute("value", "name to register");
+	name.setAttribute("value", "name");
 	name.setAttribute("id", "name");
 	header.appendChild(name);
+
+	// password text box
+	var password = document.createElement("INPUT");
+	password.setAttribute("type", "text");
+	password.setAttribute("value", "password");
+	password.setAttribute("id", "password");
+	header.appendChild(password);
+
+	// email text box
+	var email = document.createElement("INPUT");
+	email.setAttribute("type", "text");
+	email.setAttribute("value", "email");
+	email.setAttribute("id", "email");
+	header.appendChild(email);
+
 
 	// username icon
 	var loginIcon = document.createElement("li");
@@ -50,93 +71,89 @@ const api  = new API();
 	loginIcon.classList.toggle('nav-item');
 	header.appendChild(loginIcon);
 
-	// register icon
+	// signup icon
 	var registerIcon = document.createElement("li");
 	registerIcon.innerText = "Register";
 	registerIcon.classList.toggle('nav-item');
 	header.appendChild(registerIcon);
 
-	// get user list from provided json file
-	var users = await getUsersArray();
-	console.log(users);
+	// Adding functions to login/signup
+	loginIcon.addEventListener('click', function() {login()});
+	registerIcon.addEventListener('click', function() {signup()});
 
-	loginIcon.addEventListener('click', function() {login(users)});
-	registerIcon.addEventListener('click', function() {register(users)});
+	// Testing out posting on current user
 }());
 
 
-function register(users) {
-	const curUser = document.getElementById('username').value;
-	const curUserName = document.getElementById('name').value;
-	const usersLength = users.length;
-	var registered = 0;
-	for (var i =0; i < usersLength; i++) {
-		if (users[i].username == curUser) {
-			registered = 1;
-		}
-	}
-	if (registered == 0) {
-		var newUser = {}; // = {username:`${curUser}`};
-		newUser.username = curUser;
-		newUser.name = curUserName;
-		newUser.id = usersLength+1;
-		users.push(newUser);
-		console.log("Registered ", users[i], users);
-		//console.log(users[i]);
-	} else {
-		console.log("Already registered");
-	}
+async function signup() {
+	const user = document.getElementById('username').value;
+	const name = document.getElementById('name').value;
+	const password = document.getElementById('password').value;
+	const email = document.getElementById('email').value;
+
+	var data = { "username": user, "password": password, "email": email, "name": name};
+	const signupPromise = fetch("http://127.0.0.1:5000/auth/signup", {
+							    headers: { "Content-Type": 'application/json' },
+							    method: "POST",
+							    body: JSON.stringify(data),
+							})
+							.then(data => data.json())
+							.then(json => JSON.stringify(json))
+							.then(token => console.log(token));
+
 }
 
-function login(users) {
-	var loginSuccess = 0;
-	const curUser = document.getElementById('username').value;
-	const usersLength = users.length;
-	for (var i = 0; i < usersLength; i++) {
-		if (users[i].username == curUser) {
-			
-			//console.log(" is registered");
+async function login() {
+	const password = document.getElementById('password').value;
+	const user = document.getElementById('username').value;
+
+	var data = { "username": user, "password": password};
+	const loginResult = await fetch("http://127.0.0.1:5000/auth/login", {
+   								headers: { "Content-Type": "application/json" },
+							    method: "POST",
+							    body: JSON.stringify(data),
+						})
+						.then(data => data.json())					// becomes json
+						.then(json => JSON.stringify(json))			// becomes a string
+						.then(string => JSON.parse(string));		// becomes an object
+
+	console.log(loginResult);
+	if (loginResult.hasOwnProperty("token")) {
+			// login successful, got token back
+			console.log(user, "is registered with password", password);
 			const largefeed = document.getElementById('large-feed');
 			largefeed.innerHTML = "<p> Not Yet Implemented </p>";
-			loginSuccess = 1;
-		}
-	}
-	if (loginSuccess == 1) {
-		console.log(curUser, "is being logged in");
+			return loginResult.token;
 	} else {
-		console.log(curUser, "doesnt exist");
+		console.log(user, "doesnt exist in database");
 	}
 }
 
-async function getUsersArray() {
-	return await getUsers();
-}
-
-async function getUsers() {
-	const usersPromise = api.getUsers()
-		.then(function(json) {
-			return JSON.stringify(json);
-		})
-		.then(function(stringArray) {
-			return JSON.parse(stringArray);
-		})
-		.then(function(users) {
-			// 
-			// console.log(curUser);
-			// const usersLength = users.length;
-			// for (var i = 0; i < usersLength; i++) {
-			// 	if (users[i].username == curUser) {
-			// 		console.log(users[i]);
-			// 		console.log(" is registered");
-			// 		const largefeed = document.getElementById('large-feed');
-			// 		largefeed.innerHTML = "<p> Not Yet Implemented </p>";
-			// 	}
-			// }
-			// we can get the og layout back by using the feedPromise loop above.
-			return users;
-		});
-	return usersPromise;
-}
+// async function getUsers() {
+// 	const usersPromise = api.getUsers()
+// 		.then(function(json) {
+// 			return JSON.stringify(json);
+// 		})
+// 		.then(function(stringArray) {
+// 			return JSON.parse(stringArray);
+// 		})
+// 		.then(function(users) {
+// 			// 
+// 			// console.log(curUser);
+// 			// const usersLength = users.length;
+// 			// for (var i = 0; i < usersLength; i++) {
+// 			// 	if (users[i].username == curUser) {
+// 			// 		console.log(users[i]);
+// 			// 		console.log(" is registered");
+// 			// 		const largefeed = document.getElementById('large-feed');
+// 			// 		largefeed.innerHTML = "<p> Not Yet Implemented </p>";
+// 			// 	}
+// 			// }
+// 			// we can get the og layout back by using the feedPromise loop above.
+// 			return users;
+// 		});
+// 	return usersPromise;
+// }
 
 
 

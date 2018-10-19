@@ -1,5 +1,6 @@
 // change this when you integrate with the real API, or when u start using the dev server
-const API_URL = 'http://localhost:8080/data'
+const API_URL = 'http://127.0.0.1:5000'
+const STATIC_API_URL = 'http://localhost:8080/data'
 
 const getJSON = (path, options) => 
     fetch(path, options)
@@ -16,37 +17,34 @@ export default class API {
      * Defaults to teh API URL
      * @param {string} url 
      */
-    constructor(url = API_URL) {
+    constructor(url = API_URL, staticurl = STATIC_API_URL) {
         this.url = url;
+        this.staticurl = staticurl;
     } 
 
-    makeAPIRequest(path) {
-        return getJSON(`${this.url}/${path}`);
+    makeAPIRequest(path, options) {
+        return getJSON(`${this.url}/${path}`, options);
     }
 
     /**
      * @returns feed array in json format
      */
-    getFeed() {
-        return this.makeAPIRequest('feed.json');
+    getDummyFeed(options) {
+        return this.makeAPIRequest('dummy/user/feed', options);
     }
 
-    /**
-     * @returns auth'd user in json format
-     */
-    getMe() {
-        return this.makeAPIRequest('me.json');
+    getFeed(options) {
+        return this.makeAPIRequest('user/feed', options);
     }
 
-    getUsers() {
-        return this.makeAPIRequest('users.json');
+
+
+
+    makeStaticAPIRequest(path, options) {
+        return getJSON(`${this.staticurl}/${path}`, options);
     }
 
-        /**
-     * 
-     */
-    getFile(file) {
-        return this.makeAPIRequest('file.json');
+    getStaticFeed() {
+        return this.makeStaticAPIRequest('feed.json');
     }
-
 }

@@ -88,8 +88,9 @@ export function uploadImage(event) {
     };
 
     // this returns a base64 image
-    reader.readAsDataURL(file);
+    return reader.readAsDataURL(file);
 }
+
 
 /* 
     Reminder about localStorage

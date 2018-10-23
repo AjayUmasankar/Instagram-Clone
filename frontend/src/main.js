@@ -13,7 +13,7 @@ const api  = new API();
 
 
 
-(async function() {
+(function() {
 	// we can use this single api request multiple times
 	const staticFeed = api.getStaticFeed();
 	staticFeed
@@ -35,10 +35,7 @@ const api  = new API();
 	// 					.then(data => console.log(data));
 
 
-	// Potential example to upload an image
-	const input = document.querySelector('input[type="file"]');
 
-	input.addEventListener('change', uploadImage);
 
 
 	// Creating LOGIN/REGISTER text boxes and icons
@@ -90,13 +87,83 @@ const api  = new API();
 	followIcon.classList.toggle('nav-item');
 	header.appendChild(followIcon);
 
+	// post icon
+	var postIcon = document.getElementsByClassName("nav-item")[1];
+	postIcon.innerText = "Post";
+
 	// Adding functions to login/signup
 	loginIcon.addEventListener('click', function() {login()});
 	registerIcon.addEventListener('click', function() {signup()});
 	followIcon.addEventListener('click', function() {follow()});
+	postIcon.addEventListener('click', function() {getImage()});
+
+	// removing 'flex' attribute temporarily for header
+	header.style.display = 'table-cell';
 
 	// Testing out posting on current user
+	const input = document.querySelector('input[type="file"]');
+	//input.addEventListener('change', uploadImage);
 }());
+
+async function getFeed() {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const feedResult = await api.makeAPIRequest("user/feed", options);
+	console.log(feedResult);
+}
+
+async function postImage(base64) {
+	const user = document.getElementById('username').value;
+	const token = localStorage.getItem("token");
+	const description = "not yet implemented";
+	const base64nometa = base64.substring(22, base64.length);
+	console.log(base64nometa);
+	const body = { "description_text": `${description}`, "src": `${base64nometa}` };
+	const options = {
+						method: "POST",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+						body: JSON.stringify(body),
+					}
+
+	const postResult = await api.makeAPIRequest("post", options);
+	console.log(postResult);
+}
+
+async function getImage() {
+	const files = document.getElementsByTagName("input")[0].files;
+	if (files.length < 1) {
+		console.log("No files");
+		return false;
+	}
+	const file = files[0];
+    const validFileTypes = [ 'image/jpeg', 'image/png', 'image/jpg' ]
+    const valid = validFileTypes.find(type => type === file.type);
+    // bad data, let's walk away
+    if (!valid)  {
+    	console.log("Not jpeg, png, or jpg");
+        return false;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function() {
+        postImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+}
+
+
 
 async function follow() {
 	const user = document.getElementById('username').value;
@@ -109,7 +176,7 @@ async function follow() {
 						headers: {'Authorization': `Token ${token}`},
 					}
 	const followResult = await api.makeAPIRequest(`user/follow?username=${user}`, options);
-
+	console.log(followResult);
  
 }
 
@@ -126,8 +193,8 @@ async function signup() {
 					    body: JSON.stringify(body),
 					}
 
-	const signupPromise = api.makeAPIRequest("auth/signup", options);
-
+	const signupResult = await api.makeAPIRequest("auth/signup", options);
+	console.log(signupResult);
 }
 
 async function login() {
@@ -154,6 +221,7 @@ async function login() {
 			const largefeed = document.getElementById('large-feed');
 			largefeed.innerHTML = "<p> Not Yet Implemented </p>";
 			localStorage.setItem("token", loginResult.token);
+			console.log(await getFeed());
 			//console.log(JSON.parse(localStorage.getItem("tokenObj")));
 	} else {
 		console.log(user, "doesnt exist in database");

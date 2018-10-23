@@ -8,4 +8,4 @@ are no example posts and users as of yet)
 
 23/10/18 	6.30 - 7.30pm 	Refactored code a little bit and added code to follow another user via the frontend
 
-23/10/18	7.30 - 8.30pm		Implemented post 
+23/10/18	7.30 - 9:00pm	Implemented post and get users feed

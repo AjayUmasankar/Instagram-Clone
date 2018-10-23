@@ -6,6 +6,13 @@ import API from './api.js';
 
 const api  = new API();
 
+
+// Username is registered with password password
+// greg username, greg password
+// Username follows greg
+
+
+
 (async function() {
 	// we can use this single api request multiple times
 	const staticFeed = api.getStaticFeed();
@@ -65,7 +72,7 @@ const api  = new API();
 	header.appendChild(email);
 
 
-	// username icon
+	// login icon
 	var loginIcon = document.createElement("li");
 	loginIcon.innerText = "Login";
 	loginIcon.classList.toggle('nav-item');
@@ -77,13 +84,34 @@ const api  = new API();
 	registerIcon.classList.toggle('nav-item');
 	header.appendChild(registerIcon);
 
+	// follow icon
+	var followIcon = document.createElement("li");
+	followIcon.innerText = "Follow";
+	followIcon.classList.toggle('nav-item');
+	header.appendChild(followIcon);
+
 	// Adding functions to login/signup
 	loginIcon.addEventListener('click', function() {login()});
 	registerIcon.addEventListener('click', function() {signup()});
+	followIcon.addEventListener('click', function() {follow()});
 
 	// Testing out posting on current user
 }());
 
+async function follow() {
+	const user = document.getElementById('username').value;
+	const token = localStorage.getItem("token");
+	console.log(token);
+
+
+	const options = {
+						method: "PUT",
+						headers: {'Authorization': `Token ${token}`},
+					}
+	const followResult = await api.makeAPIRequest(`user/follow?username=${user}`, options);
+
+ 
+}
 
 async function signup() {
 	const user = document.getElementById('username').value;
@@ -91,15 +119,14 @@ async function signup() {
 	const password = document.getElementById('password').value;
 	const email = document.getElementById('email').value;
 
-	var data = { "username": user, "password": password, "email": email, "name": name};
-	const signupPromise = fetch("http://127.0.0.1:5000/auth/signup", {
-							    headers: { "Content-Type": 'application/json' },
-							    method: "POST",
-							    body: JSON.stringify(data),
-							})
-							.then(data => data.json())
-							.then(json => JSON.stringify(json))
-							.then(token => console.log(token));
+	var body = { "username": user, "password": password, "email": email, "name": name};
+	var options =   {
+					    headers: { "Content-Type": 'application/json' },
+					    method: "POST",
+					    body: JSON.stringify(body),
+					}
+
+	const signupPromise = api.makeAPIRequest("auth/signup", options);
 
 }
 
@@ -107,15 +134,18 @@ async function login() {
 	const password = document.getElementById('password').value;
 	const user = document.getElementById('username').value;
 
-	var data = { "username": user, "password": password};
-	const loginResult = await fetch("http://127.0.0.1:5000/auth/login", {
-   								headers: { "Content-Type": "application/json" },
-							    method: "POST",
-							    body: JSON.stringify(data),
-						})
-						.then(data => data.json())					// becomes json
-						.then(json => JSON.stringify(json))			// becomes a string
-						.then(string => JSON.parse(string));		// becomes an object
+	var body = { "username": user, "password": password};
+	var options = 	{
+							headers: { "Content-Type": "application/json" },
+						    method: "POST",
+						    body: JSON.stringify(body),
+					}
+	const loginResult = await api.makeAPIRequest("auth/login", options);
+
+						//  await fetch("http://127.0.0.1:5000/auth/login", )
+						// .then(data => data.json())					// becomes json
+						// .then(json => JSON.stringify(json))			// becomes a string
+						// .then(string => JSON.parse(string));		// becomes an object
 
 	console.log(loginResult);
 	if (loginResult.hasOwnProperty("token")) {
@@ -123,11 +153,13 @@ async function login() {
 			console.log(user, "is registered with password", password);
 			const largefeed = document.getElementById('large-feed');
 			largefeed.innerHTML = "<p> Not Yet Implemented </p>";
-			return loginResult.token;
+			localStorage.setItem("token", loginResult.token);
+			//console.log(JSON.parse(localStorage.getItem("tokenObj")));
 	} else {
 		console.log(user, "doesnt exist in database");
 	}
 }
+
 
 // async function getUsers() {
 // 	const usersPromise = api.getUsers()
@@ -154,9 +186,6 @@ async function login() {
 // 		});
 // 	return usersPromise;
 // }
-
-
-
 
 
 //  Promise.all([feedPromise,usersPromise]).then(function(data) {

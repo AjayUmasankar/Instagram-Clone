@@ -76,7 +76,13 @@ export function createPostTile(post) {
     const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
     const expandComments = createElement('i', "expand_more", {class:"material-icons expandComments"});
     const commentList = createElement('div', null, {class:"commentList"});
-    post.comments.map(userID => commentList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    post.comments.map(comment => {
+        const author = comment.author;
+        const published = comment.published;
+        const authorComment = comment.comment;
+        commentList.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
+    });
+        //commentList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
     commentElement.appendChild(expandComments);
     commentElement.appendChild(commentList);
     commentList.hidden = false;
@@ -97,12 +103,12 @@ export function createPostTile(post) {
     var curHour = date.getHours();
     var curMinute = date.getMinutes();
     var curSecond = date.getSeconds();
-    var reqTime = "Year: " + curYear;
-    reqTime += " Month: " + (curMonth+1);
-    reqTime += " Date: " + curDate;
-    reqTime += " Hour: " + curHour;
-    reqTime += " Minute: " + curMinute;
-    reqTime += " Second: " + curSecond;
+    var reqTime = curDate;
+    reqTime += "/" + curMonth;
+    reqTime += "/" + curYear + " ";
+    reqTime += curHour + ":";
+    reqTime += curMinute + ":";
+    reqTime += curSecond;
     section.appendChild(createElement('p', reqTime, {class: 'post-desc'}));
 
     return section;

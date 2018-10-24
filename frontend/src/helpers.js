@@ -35,7 +35,13 @@ export function createElement(tag, data, options = {}) {
  * @returns {HTMLElement}
  */
 export function createPostTile(post) {
-    const section = createElement('section', null, { class: 'post' });
+    var section;
+    if (post.hasOwnProperty("id")) {
+        section = createElement('section', null, { class: 'post', id:post.id });
+    } else {
+        section = createElement('section', null, { class: 'post' });
+    }
+
 
     // who the post was made by
     section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
@@ -44,26 +50,83 @@ export function createPostTile(post) {
     section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
 
     // The image itself
+    if (post.hasOwnProperty("id")) {
+        section.appendChild(createElement('img', null, 
+        { src: 'data:image/png;base64,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
+    } else {
+        section.appendChild(createElement('img', null, 
+        { src: '/images/,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
+    }
+  
+    // Like button
+    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton"}));// follow icon
+    
+    // Number of likes/who liked this post
+    const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'});
+    const expandLikes = createElement('i', "expand_more", {class:"material-icons expandLikes"});
+    const likeList = createElement('div', null, {class:"likeList"});
+    post.meta.likes.map(userID => likeList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    likeElement.appendChild(expandLikes);
+    likeElement.appendChild(likeList);
+    likeList.hidden = false;
+    section.appendChild(likeElement);
+
+
+    // How many comments the post has
+    const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
+    const expandComments = createElement('i', "expand_more", {class:"material-icons expandComments"});
+    const commentList = createElement('div', null, {class:"commentList"});
+    post.comments.map(userID => commentList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    commentElement.appendChild(expandComments);
+    commentElement.appendChild(commentList);
+    commentList.hidden = false;
+    section.appendChild(commentElement);
+
+    // Comment text box
+    var comment = document.createElement("INPUT");
+    comment.setAttribute("type", "text");
+    comment.setAttribute("value", "comment");
+    comment.setAttribute("class", "commentButton");
+    section.appendChild(comment);
+
+    // when it was posted
+    const date = new Date(parseInt(post.meta.published)*1000);
+    var curYear = date.getFullYear();
+    var curMonth = date.getMonth();
+    var curDate = date.getDate();
+    var curHour = date.getHours();
+    var curMinute = date.getMinutes();
+    var curSecond = date.getSeconds();
+    var reqTime = "Year: " + curYear;
+    reqTime += " Month: " + (curMonth+1);
+    reqTime += " Date: " + curDate;
+    reqTime += " Hour: " + curHour;
+    reqTime += " Minute: " + curMinute;
+    reqTime += " Second: " + curSecond;
+    section.appendChild(createElement('p', reqTime, {class: 'post-desc'}));
+
+    return section;
+
+}
+
+
+export function createStaticPostTile(post) {
+     const section = createElement('section', null, { class: 'post' });
+    // who the post was made by
+    section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
+    // description of post
+    section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
+    // The image itself
     section.appendChild(createElement('img', null, 
         { src: '/images/'+post.src, alt: post.meta.description_text, class: 'post-image' }));
-
     // How many likes it has (or none)
     section.appendChild(createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'}));
 
     // How many comments the post has
     section.appendChild(createElement('p', `${post.meta.comments.length} comments`, {class: 'post-desc'}));
-
     // when it was posted
     section.appendChild(createElement('p', post.meta.published, {class: 'post-desc'}));
-
-    return section;
-
-
-
-
-
-
-
+    return section
 }
 
 // Given an input element of type=file, grab the data uploaded for use

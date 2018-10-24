@@ -14,6 +14,7 @@ html, body {
     flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
+    width: 1%;
     padding: 10px;
     background-color:white;
     min-height: 60px;

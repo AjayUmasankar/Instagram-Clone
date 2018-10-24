@@ -8,4 +8,9 @@ are no example posts and users as of yet)
 
 23/10/18 	6.30 - 7.30pm 	Refactored code a little bit and added code to follow another user via the frontend
 
-23/10/18	7.30 - 9:00pm	Implemented post and get users feed
+23/10/18	7.30 - 9:00pm	Implemented post and get users feed (only returns array at this point)
+
+24/10/18	4.20 - 4.45pm 	Can display the users feed properly (with all requirements)
+
+24/10/18	5pm - 7.00pm 	Can like posts and and also show who liked the post
+							Can comment on posts and show who commented on the post

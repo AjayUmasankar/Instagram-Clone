@@ -1,5 +1,5 @@
 // importing named exports we use brackets
-import { createPostTile, uploadImage } from './helpers.js';
+import { createPostTile, createStaticPostTile, uploadImage } from './helpers.js';
 
 // when importing 'default' exports, use below syntax
 import API from './api.js';
@@ -20,21 +20,12 @@ const api  = new API();
 	.then(posts => {
 	    posts.reduce((parent, post) => {
 
-	        parent.appendChild(createPostTile(post));
+	        parent.appendChild(createStaticPostTile(post));
 	        
 	        return parent;
 
 	    }, document.getElementById('large-feed'))
 	});
-
-	// const getDummyFeed = api.getDummyFeed(			
-	// 						{
-	// 						    headers: { "Content-Type": 'application/json' },
-	// 						    method: "GET",
-	// 						})
-	// 					.then(data => console.log(data));
-
-
 
 
 
@@ -47,19 +38,19 @@ const api  = new API();
 	username.setAttribute("id", "username");
 	header.appendChild(username);
 
-	// name text box
-	var name = document.createElement("INPUT");
-	name.setAttribute("type", "text");
-	name.setAttribute("value", "name");
-	name.setAttribute("id", "name");
-	header.appendChild(name);
-
 	// password text box
 	var password = document.createElement("INPUT");
 	password.setAttribute("type", "text");
 	password.setAttribute("value", "password");
 	password.setAttribute("id", "password");
 	header.appendChild(password);
+
+	// name text box
+	var name = document.createElement("INPUT");
+	name.setAttribute("type", "text");
+	name.setAttribute("value", "name");
+	name.setAttribute("id", "name");
+	header.appendChild(name);
 
 	// email text box
 	var email = document.createElement("INPUT");
@@ -105,20 +96,9 @@ const api  = new API();
 	//input.addEventListener('change', uploadImage);
 }());
 
-async function getFeed() {
-	const token = localStorage.getItem("token");
-	const options = {
-						method: "GET",
-						headers: 
-								{
-									'Authorization': `Token ${token}`, 
-									"Content-Type": "application/json"
-								},
-					}
-	const feedResult = await api.makeAPIRequest("user/feed", options);
-	console.log(feedResult);
-}
 
+
+// Posts the uploaded image, after getImage is successful
 async function postImage(base64) {
 	const user = document.getElementById('username').value;
 	const token = localStorage.getItem("token");
@@ -140,6 +120,7 @@ async function postImage(base64) {
 	console.log(postResult);
 }
 
+// Gets an uploaded image if there is one, else returns false
 async function getImage() {
 	const files = document.getElementsByTagName("input")[0].files;
 	if (files.length < 1) {
@@ -208,24 +189,163 @@ async function login() {
 						    body: JSON.stringify(body),
 					}
 	const loginResult = await api.makeAPIRequest("auth/login", options);
-
-						//  await fetch("http://127.0.0.1:5000/auth/login", )
-						// .then(data => data.json())					// becomes json
-						// .then(json => JSON.stringify(json))			// becomes a string
-						// .then(string => JSON.parse(string));		// becomes an object
-
 	console.log(loginResult);
+
+
 	if (loginResult.hasOwnProperty("token")) {
 			// login successful, got token back
 			console.log(user, "is registered with password", password);
 			const largefeed = document.getElementById('large-feed');
 			largefeed.innerHTML = "<p> Not Yet Implemented </p>";
 			localStorage.setItem("token", loginResult.token);
-			console.log(await getFeed());
+			//console.log(await getFeed());
 			//console.log(JSON.parse(localStorage.getItem("tokenObj")));
 	} else {
 		console.log(user, "doesnt exist in database");
+		return false;
 	}
+
+	// Create current user feed
+	getFeed()
+	.then(posts => {
+		// add posts with likes/comments/time published/like button;
+		const postsArray = posts.posts;
+		console.log(postsArray);
+	    postsArray.reduce((parent, post) => {
+	        parent.appendChild(createPostTile(post));
+	        return parent;
+	    }, document.getElementById('large-feed'))
+	})
+	.then(function() {
+		// add event listeners to like buttons
+		const likeButtons = document.getElementsByClassName('likeButton');
+		for (var i = 0; i < likeButtons.length; i++) {
+			likeButtons[i].addEventListener('click', likePost);
+		}
+
+		// add event listeners to show each individual who liked the post
+		const expandLikeButtons = document.getElementsByClassName('expandLikes');
+		for (var i = 0; i < expandLikeButtons.length; i++) {
+			expandLikeButtons[i].addEventListener('click', expandLikes);
+		}
+
+		// add event listeners to comment buttons
+		const expandCommentButtons = document.getElementsByClassName('expandComments');
+		for (var i = 0; i < expandCommentButtons.length; i++) {
+			expandCommentButtons[i].addEventListener('click', expandComments);
+		}
+
+		// add event listeners to show each individual that commented on the post
+		const commentButtons = document.getElementsByClassName('commentButton');
+		for (var i = 0; i < commentButtons.length; i++) {
+			commentButtons[i].addEventListener('keypress', function (e) {
+			    var key = e.which || e.keyCode;
+			    if (key === 13) { // 13 is enter
+			      	commentPost(e);
+			    }
+			})
+		}
+	});
+}
+
+async function getCurrentUser() {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const currentUser = await api.makeAPIRequest("user", options);
+	return currentUser;
+}
+
+async function commentPost(event) {
+	const parentNode = event.target.parentNode;
+	const id = parentNode.id;
+	const comment = event.target.value;
+	console.log(comment);
+	const token = localStorage.getItem("token");
+	const published = new Date();
+	const commenter = await getCurrentUser().name;
+	const body = { "author": `${commenter}`, "published": `${published}`, "comment": `${comment}` };
+	const options = {
+						method: "PUT",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+						body: JSON.stringify(body),
+					}
+
+	const commentResult = api.makeAPIRequest(`post/comment?id=${id}`, options);
+}
+
+function expandComments(event) {
+	const parentNode = event.target.parentNode;
+	const commentList = parentNode.getElementsByClassName('commentList')[0];
+	if (commentList.hidden == true) {
+		event.target.innerText = "expand_less";
+		commentList.hidden = false;
+	} else {
+		event.target.innerText = "expand_more";
+		commentList.hidden = true;
+	}
+}
+
+function expandLikes(event) {
+	//console.log(event.target);
+	const parentNode = event.target.parentNode;
+	//console.log(parentNode);
+	const likeList = parentNode.getElementsByClassName('likeList')[0];
+	//console.log(likeList);
+	if (likeList.hidden == true) {
+		event.target.innerText = "expand_less";
+		likeList.hidden = false;
+	} else {
+		event.target.innerText = "expand_more";
+		likeList.hidden = true;
+	}
+
+
+	 
+}
+
+function likePost(event) {
+	//console.log(event);
+	//console.log(event.target);
+	//console.log(event.target.parentNode);
+	//console.log(event.target.parentNode.id);
+	const token = localStorage.getItem("token");
+	const id = event.target.parentNode.id;
+	const options = {
+						method: "PUT",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const likeResult = api.makeAPIRequest(`post/like?id=${id}`, options);
+}
+
+
+// Gets current user's feed
+async function getFeed() {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const feedResult = await api.makeAPIRequest("user/feed", options);
+	return feedResult;
 }
 
 

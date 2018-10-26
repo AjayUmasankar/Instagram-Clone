@@ -12,12 +12,15 @@ const api  = new API();
 // Username follows greg
 
 
-
+// Constructs home page
 function homePage() {
-	// we can use this single api request multiple times
+	const header = document.getElementsByClassName("banner")[0];
+	// removing 'flex' attribute for header and making it a table-cell
+	header.style.display = 'table-cell';
+
 	const largeFeed = document.getElementById('large-feed');
 	largeFeed.innerHTML = "";
-
+	// creating a basic static feed as an example 
 	const staticFeed = api.getStaticFeed();
 	staticFeed
 	.then(posts => {
@@ -31,59 +34,26 @@ function homePage() {
 	});
 
 
-
-	// Creating LOGIN/REGISTER text boxes and icons
 	// username text box
-	const header = document.getElementsByClassName("banner")[0];
-	var username = document.createElement("INPUT");
-	username.setAttribute("type", "text");
-	username.setAttribute("value", "Username");
-	username.setAttribute("id", "username");
+	const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'Username'});
 	header.appendChild(username);
-
 	// password text box
-	var password = document.createElement("INPUT");
-	password.setAttribute("type", "text");
-	password.setAttribute("value", "password");
-	password.setAttribute("id", "password");
+	const password = createElement('INPUT', "", {type: 'text', id: 'password', value: 'password'});
 	header.appendChild(password);
-
-
 	// login icon
-	var loginIcon = document.createElement("li");
-	loginIcon.innerText = "Login";
-	loginIcon.classList.toggle('nav-item');
-	loginIcon.setAttribute("id", "loginIcon");
+	const loginIcon = createElement('li', "Login", {id: 'loginIcon', class: 'nav-item'});
 	header.appendChild(loginIcon);
-
 	// new line
 	header.appendChild(document.createElement("br"));
-
 	// name text box
-	var name = document.createElement("INPUT");
-	name.setAttribute("type", "text");
-	name.setAttribute("value", "name");
-	name.setAttribute("id", "name");
+	const name = createElement('INPUT', "", {type: 'text', id: 'name', value: 'name'});
 	header.appendChild(name);
-
 	// email text box
-	var email = document.createElement("INPUT");
-	email.setAttribute("type", "text");
-	email.setAttribute("value", "email");
-	email.setAttribute("id", "email");
+	const email = createElement('INPUT', "", {type: 'text', id: 'email', value: 'email'});
 	header.appendChild(email);
-
-
-
 	// signup icon
-	var registerIcon = document.createElement("li");
-	registerIcon.innerText = "Register";
-	registerIcon.classList.toggle('nav-item');
-	registerIcon.setAttribute("id", "registerIcon");
+	const registerIcon = createElement('li', "Register", {id: 'registerIcon', class: 'nav-item'});
 	header.appendChild(registerIcon);
-
-
-
 	// post icon
 	var postIcon = document.getElementsByClassName("nav-item")[1];
 	postIcon.innerText = "Post";
@@ -91,15 +61,11 @@ function homePage() {
 	// Adding functions to login/signup
 	loginIcon.addEventListener('click', function() {login()});
 	registerIcon.addEventListener('click', function() {signup()});
-
 	postIcon.addEventListener('click', function() {getImage()});
 
-	// removing 'flex' attribute temporarily for header
-	header.style.display = 'table-cell';
-
-	// Testing out posting on current user
+	// reading in a file
 	const input = document.querySelector('input[type="file"]');
-	//input.addEventListener('change', uploadImage);
+	input.addEventListener('change', uploadImage);
 };
 
 
@@ -151,7 +117,7 @@ async function getImage() {
 }
 
 
-
+// Follows the user specified in the Username textbox (follow button only available on login)
 async function follow() {
 	const user = document.getElementById('username').value;
 	const token = localStorage.getItem("token");
@@ -167,6 +133,7 @@ async function follow() {
  
 }
 
+// Uses the four text box fields to create a new user (not available after logging in)
 async function signup() {
 	const user = document.getElementById('username').value;
 	const name = document.getElementById('name').value;
@@ -185,6 +152,7 @@ async function signup() {
 	window.alert(signupResult.message);
 }
 
+// Uses the username and password fields to attempt to login
 async function login() {
 	const password = document.getElementById('password').value;
 	const user = document.getElementById('username').value;
@@ -213,9 +181,7 @@ async function login() {
 		var email = document.getElementById("email");
 		var registerIcon = document.getElementById("registerIcon");
 		if (name && email && registerIcon) {
-		
-
-			// adding follow icon and 
+			// adding follow icon 
 			const username = document.getElementById('username');
 			var followIcon = document.createElement("li");
 			followIcon.innerText = "Follow";
@@ -263,13 +229,13 @@ async function login() {
 		}
 
 		// add event listeners to show each individual who liked the post
-		const expandLikeButtons = document.getElementsByClassName('expandLikes');
+		const expandLikeButtons = document.getElementsByClassName('toggleList');
 		for (var i = 0; i < expandLikeButtons.length; i++) {
 			expandLikeButtons[i].addEventListener('click', toggleList);
 		}
 
 		// add event listeners to comment buttons
-		const expandCommentButtons = document.getElementsByClassName('expandComments');
+		const expandCommentButtons = document.getElementsByClassName('toggleList');
 		for (var i = 0; i < expandCommentButtons.length; i++) {
 			expandCommentButtons[i].addEventListener('click', toggleList);
 		}

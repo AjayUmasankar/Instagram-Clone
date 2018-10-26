@@ -82,7 +82,6 @@ export function createPostTile(post) {
         const authorComment = comment.comment;
         commentList.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
     });
-        //commentList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
     commentElement.appendChild(expandComments);
     commentElement.appendChild(commentList);
     commentList.hidden = false;

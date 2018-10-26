@@ -299,10 +299,14 @@ async function userProfile() {
     section.appendChild(createElement('p', currentUser.id, {class: 'post-desc'}));
 
     // users that we follow
-    const likeElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
-    const expandLikes = createElement('i', "expand_more", {class:"material-icons expandLikes"});
-    const likeList = createElement('div', null, {id:"followingList"});
-    post.meta.likes.map(userID => likeList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    const followingElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
+    const expandFollowing = createElement('i', "expand_more", {class:"material-icons expandLikes"});
+    const followingList = createElement('div', null, {id:"followingList"});
+    currentUser.following.map(userID => followingList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    followingElement.appendChild(expandFollowing);
+    followingElement.appendChild(followingList);
+    followingList.hidden = false;
+    section.appendChild(followingElement);
 
 }
 
@@ -351,6 +355,17 @@ async function commentPost(event) {
 }
 
 
+function toggleList(event) {
+	const parentNode = event.target.parentNode;
+	const commentList = parentNode.getElementsByClassName('list')[0];
+	if (commentList.hidden == true) {
+		event.target.innerText = "expand_less";
+		commentList.hidden = false;
+	} else {
+		event.target.innerText = "expand_more";
+		commentList.hidden = true;
+	}
+}
 
 function expandComments(event) {
 	const parentNode = event.target.parentNode;

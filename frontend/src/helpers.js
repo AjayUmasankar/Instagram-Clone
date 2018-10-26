@@ -64,7 +64,7 @@ export function createPostTile(post) {
     // Number of likes/who liked this post
     const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'});
     const expandLikes = createElement('i', "expand_more", {class:"material-icons expandLikes"});
-    const likeList = createElement('div', null, {class:"likeList"});
+    const likeList = createElement('div', null, {class:"list"});
     post.meta.likes.map(userID => likeList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
     likeElement.appendChild(expandLikes);
     likeElement.appendChild(likeList);
@@ -75,7 +75,7 @@ export function createPostTile(post) {
     // How many comments the post has
     const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
     const expandComments = createElement('i', "expand_more", {class:"material-icons expandComments"});
-    const commentList = createElement('div', null, {class:"commentList"});
+    const commentList = createElement('div', null, {class:"list"});
     post.comments.map(comment => {
         const author = comment.author;
         const published = comment.published;

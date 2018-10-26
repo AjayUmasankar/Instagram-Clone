@@ -265,13 +265,13 @@ async function login() {
 		// add event listeners to show each individual who liked the post
 		const expandLikeButtons = document.getElementsByClassName('expandLikes');
 		for (var i = 0; i < expandLikeButtons.length; i++) {
-			expandLikeButtons[i].addEventListener('click', expandLikes);
+			expandLikeButtons[i].addEventListener('click', toggleList);
 		}
 
 		// add event listeners to comment buttons
 		const expandCommentButtons = document.getElementsByClassName('expandComments');
 		for (var i = 0; i < expandCommentButtons.length; i++) {
-			expandCommentButtons[i].addEventListener('click', expandComments);
+			expandCommentButtons[i].addEventListener('click', toggleList);
 		}
 
 		// add event listeners to show each individual that commented on the post
@@ -367,35 +367,7 @@ function toggleList(event) {
 	}
 }
 
-function expandComments(event) {
-	const parentNode = event.target.parentNode;
-	const commentList = parentNode.getElementsByClassName('commentList')[0];
-	if (commentList.hidden == true) {
-		event.target.innerText = "expand_less";
-		commentList.hidden = false;
-	} else {
-		event.target.innerText = "expand_more";
-		commentList.hidden = true;
-	}
-}
 
-function expandLikes(event) {
-	//console.log(event.target);
-	const parentNode = event.target.parentNode;
-	//console.log(parentNode);
-	const likeList = parentNode.getElementsByClassName('likeList')[0];
-	//console.log(likeList);
-	if (likeList.hidden == true) {
-		event.target.innerText = "expand_less";
-		likeList.hidden = false;
-	} else {
-		event.target.innerText = "expand_more";
-		likeList.hidden = true;
-	}
-
-
-	 
-}
 
 function likePost(event) {
 	//console.log(event);
@@ -473,4 +445,32 @@ async function getFeed() {
 
 // });
 
+
+
+// function expandComments(event) {
+// 	const parentNode = event.target.parentNode;
+// 	const commentList = parentNode.getElementsByClassName('commentList')[0];
+// 	if (commentList.hidden == true) {
+// 		event.target.innerText = "expand_less";
+// 		commentList.hidden = false;
+// 	} else {
+// 		event.target.innerText = "expand_more";
+// 		commentList.hidden = true;
+// 	}
+// }
+
+// function expandLikes(event) {
+// 	//console.log(event.target);
+// 	const parentNode = event.target.parentNode;
+// 	//console.log(parentNode);
+// 	const likeList = parentNode.getElementsByClassName('likeList')[0];
+// 	//console.log(likeList);
+// 	if (likeList.hidden == true) {
+// 		event.target.innerText = "expand_less";
+// 		likeList.hidden = false;
+// 	} else {
+// 		event.target.innerText = "expand_more";
+// 		likeList.hidden = true;
+// 	}
+// }
 homePage();

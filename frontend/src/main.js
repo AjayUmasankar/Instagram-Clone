@@ -1,5 +1,5 @@
 // importing named exports we use brackets
-import { createPostTile, createStaticPostTile, uploadImage } from './helpers.js';
+import { createPostTile, createStaticPostTile, uploadImage, createElement } from './helpers.js';
 
 // when importing 'default' exports, use below syntax
 import API from './api.js';
@@ -13,8 +13,11 @@ const api  = new API();
 
 
 
-(function() {
+function homePage() {
 	// we can use this single api request multiple times
+	const largeFeed = document.getElementById('large-feed');
+	largeFeed.innerHTML = "";
+
 	const staticFeed = api.getStaticFeed();
 	staticFeed
 	.then(posts => {
@@ -24,7 +27,7 @@ const api  = new API();
 	        
 	        return parent;
 
-	    }, document.getElementById('large-feed'))
+	    }, largeFeed)
 	});
 
 
@@ -45,6 +48,17 @@ const api  = new API();
 	password.setAttribute("id", "password");
 	header.appendChild(password);
 
+
+	// login icon
+	var loginIcon = document.createElement("li");
+	loginIcon.innerText = "Login";
+	loginIcon.classList.toggle('nav-item');
+	loginIcon.setAttribute("id", "loginIcon");
+	header.appendChild(loginIcon);
+
+	// new line
+	header.appendChild(document.createElement("br"));
+
 	// name text box
 	var name = document.createElement("INPUT");
 	name.setAttribute("type", "text");
@@ -60,23 +74,15 @@ const api  = new API();
 	header.appendChild(email);
 
 
-	// login icon
-	var loginIcon = document.createElement("li");
-	loginIcon.innerText = "Login";
-	loginIcon.classList.toggle('nav-item');
-	header.appendChild(loginIcon);
 
 	// signup icon
 	var registerIcon = document.createElement("li");
 	registerIcon.innerText = "Register";
 	registerIcon.classList.toggle('nav-item');
+	registerIcon.setAttribute("id", "registerIcon");
 	header.appendChild(registerIcon);
 
-	// follow icon
-	var followIcon = document.createElement("li");
-	followIcon.innerText = "Follow";
-	followIcon.classList.toggle('nav-item');
-	header.appendChild(followIcon);
+
 
 	// post icon
 	var postIcon = document.getElementsByClassName("nav-item")[1];
@@ -85,7 +91,7 @@ const api  = new API();
 	// Adding functions to login/signup
 	loginIcon.addEventListener('click', function() {login()});
 	registerIcon.addEventListener('click', function() {signup()});
-	followIcon.addEventListener('click', function() {follow()});
+
 	postIcon.addEventListener('click', function() {getImage()});
 
 	// removing 'flex' attribute temporarily for header
@@ -94,7 +100,7 @@ const api  = new API();
 	// Testing out posting on current user
 	const input = document.querySelector('input[type="file"]');
 	//input.addEventListener('change', uploadImage);
-}());
+};
 
 
 
@@ -157,7 +163,7 @@ async function follow() {
 						headers: {'Authorization': `Token ${token}`},
 					}
 	const followResult = await api.makeAPIRequest(`user/follow?username=${user}`, options);
-	console.log(followResult);
+	window.alert(followResult.message);
  
 }
 
@@ -176,11 +182,13 @@ async function signup() {
 
 	const signupResult = await api.makeAPIRequest("auth/signup", options);
 	console.log(signupResult);
+	window.alert(signupResult.message);
 }
 
 async function login() {
 	const password = document.getElementById('password').value;
 	const user = document.getElementById('username').value;
+	const header = document.getElementsByClassName("banner")[0];
 
 	var body = { "username": user, "password": password};
 	var options = 	{
@@ -189,19 +197,50 @@ async function login() {
 						    body: JSON.stringify(body),
 					}
 	const loginResult = await api.makeAPIRequest("auth/login", options);
-	console.log(loginResult);
+	
 
 
 	if (loginResult.hasOwnProperty("token")) {
-			// login successful, got token back
-			console.log(user, "is registered with password", password);
-			const largefeed = document.getElementById('large-feed');
-			largefeed.innerHTML = "<p> Not Yet Implemented </p>";
-			localStorage.setItem("token", loginResult.token);
-			//console.log(await getFeed());
-			//console.log(JSON.parse(localStorage.getItem("tokenObj")));
+		// login successful, got token back
+		console.log(user, "is registered with password", password);
+		const largefeed = document.getElementById('large-feed');
+		largefeed.innerHTML = "";
+		localStorage.setItem("token", loginResult.token);
+		
+		// This if statement is only activated on the first login since we remove 
+		// the name email and registerIcon fields
+		var name = document.getElementById("name");
+		var email = document.getElementById("email");
+		var registerIcon = document.getElementById("registerIcon");
+		if (name && email && registerIcon) {
+		
+
+			// adding follow icon and 
+			const username = document.getElementById('username');
+			var followIcon = document.createElement("li");
+			followIcon.innerText = "Follow";
+			followIcon.classList.toggle('nav-item');
+			header.insertBefore(followIcon, username.nextSibling);
+			followIcon.addEventListener('click', function() {follow()});
+			
+
+			// add a user profile button (to the right of the login icon)
+			const loginIcon = document.getElementById('loginIcon');
+			var profileIcon = document.createElement("div");
+			profileIcon.innerText = "Profile";
+			profileIcon.classList.toggle('nav-item');
+			profileIcon.setAttribute("id", "profileIcon");
+			profileIcon.style.float = "right";
+			header.insertBefore(profileIcon, loginIcon.nextSibling);
+			profileIcon.addEventListener('click', function() {userProfile()})
+
+			// removing name, email and register fields
+			header.removeChild(name);
+			header.removeChild(email);
+			header.removeChild(registerIcon);
+		}
 	} else {
-		console.log(user, "doesnt exist in database");
+		window.alert(loginResult.message);
 		return false;
 	}
 
@@ -245,7 +284,26 @@ async function login() {
 			    }
 			})
 		}
+
 	});
+}
+
+async function userProfile() {
+	const currentUser = await getCurrentUser();
+	console.log(currentUser);	
+	const largeFeed = document.getElementById('large-feed');
+	largeFeed.innerHTML = "";
+
+	section = createElement('section', null, { class: 'post' });
+    section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
+    section.appendChild(createElement('p', currentUser.id, {class: 'post-desc'}));
+
+    // users that we follow
+    const likeElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
+    const expandLikes = createElement('i', "expand_more", {class:"material-icons expandLikes"});
+    const likeList = createElement('div', null, {id:"followingList"});
+    post.meta.likes.map(userID => likeList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+
 }
 
 async function getCurrentUser() {
@@ -266,11 +324,13 @@ async function commentPost(event) {
 	const parentNode = event.target.parentNode;
 	const id = parentNode.id;
 	const comment = event.target.value;
-	console.log(comment);
 	const token = localStorage.getItem("token");
 	const published = new Date();
-	const commenter = await getCurrentUser().name;
-	const body = { "author": `${commenter}`, "published": `${published}`, "comment": `${comment}` };
+
+	// i think that whatever author name you put in here, it doesnt matter, as the backend uses the 
+	// authorization token to deduce the user's username and uses that as author
+	const author = await getCurrentUser().name;
+	const body = { "author": `${author}`, "published": `${published}`, "comment": `${comment}` };
 	const options = {
 						method: "PUT",
 						headers: 
@@ -281,8 +341,16 @@ async function commentPost(event) {
 						body: JSON.stringify(body),
 					}
 
-	const commentResult = api.makeAPIRequest(`post/comment?id=${id}`, options);
+	const currentUser = await getCurrentUser(); 
+	const username = currentUser.username;
+	const commentResult = await api.makeAPIRequest(`post/comment?id=${id}`, options);
+	const commentList = parentNode.getElementsByClassName('commentList')[0];
+	commentList.appendChild(createElement('li', `${username}: ${comment}`, {class:"comment"}));
+
+	window.alert(`Comment status: ${commentResult.message}`);
 }
+
+
 
 function expandComments(event) {
 	const parentNode = event.target.parentNode;
@@ -389,3 +457,5 @@ async function getFeed() {
 
 
 // });
+
+homePage();

@@ -229,21 +229,15 @@ async function login() {
 		}
 
 		// add event listeners to show each individual who liked the post
-		const expandLikeButtons = document.getElementsByClassName('toggleList');
-		for (var i = 0; i < expandLikeButtons.length; i++) {
-			expandLikeButtons[i].addEventListener('click', toggleList);
-		}
-
-		// add event listeners to comment buttons
-		const expandCommentButtons = document.getElementsByClassName('toggleList');
-		for (var i = 0; i < expandCommentButtons.length; i++) {
-			expandCommentButtons[i].addEventListener('click', toggleList);
+		const listButtons = document.getElementsByClassName('toggleList');
+		for (var i = 0; i < listButtons.length; i++) {
+			listButtons[i].addEventListener('click', toggleList);
 		}
 
 		// add event listeners to show each individual that commented on the post
-		const commentButtons = document.getElementsByClassName('commentButton');
-		for (var i = 0; i < commentButtons.length; i++) {
-			commentButtons[i].addEventListener('keypress', function (e) {
+		const commentBoxes = document.getElementsByClassName('commentBox');
+		for (var i = 0; i < commentBoxes.length; i++) {
+			commentBoxes[i].addEventListener('keypress', function (e) {
 			    var key = e.which || e.keyCode;
 			    if (key === 13) { // 13 is enter
 			      	commentPost(e);

@@ -35,12 +35,8 @@ export function createElement(tag, data, options = {}) {
  * @returns {HTMLElement}
  */
 export function createPostTile(post) {
-    var section;
-    if (post.hasOwnProperty("id")) {
-        section = createElement('section', null, { class: 'post', id:post.id });
-    } else {
-        section = createElement('section', null, { class: 'post' });
-    }
+    var section = createElement('section', null, { class: 'post', id:post.id });
+
 
 
     // who the post was made by
@@ -50,48 +46,40 @@ export function createPostTile(post) {
     section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
 
     // The image itself
-    if (post.hasOwnProperty("id")) {
-        section.appendChild(createElement('img', null, 
+    section.appendChild(createElement('img', null, 
         { src: 'data:image/png;base64,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
-    } else {
-        section.appendChild(createElement('img', null, 
-        { src: '/images/,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
-    }
   
     // Like button
     section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton"}));// follow icon
     
     // Number of likes/who liked this post
     const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'});
-    const expandLikes = createElement('i', "expand_more", {class:"material-icons expandLikes"});
-    const likeList = createElement('div', null, {class:"list"});
-    post.meta.likes.map(userID => likeList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
-    likeElement.appendChild(expandLikes);
-    likeElement.appendChild(likeList);
-    likeList.hidden = false;
+    var toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    var list = createElement('div', null, {class:"list"});
+    post.meta.likes.map(userID => list.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    likeElement.appendChild(toggleList);
+    likeElement.appendChild(list);
+    list.hidden = false;
     section.appendChild(likeElement);
 
 
     // How many comments the post has
     const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
-    const expandComments = createElement('i', "expand_more", {class:"material-icons expandComments"});
-    const commentList = createElement('div', null, {class:"list"});
+    toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    list = createElement('div', null, {class:"list"});
     post.comments.map(comment => {
         const author = comment.author;
         const published = comment.published;
         const authorComment = comment.comment;
-        commentList.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
+        list.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
     });
-    commentElement.appendChild(expandComments);
-    commentElement.appendChild(commentList);
-    commentList.hidden = false;
+    commentElement.appendChild(toggleList);
+    commentElement.appendChild(list);
+    list.hidden = false;
     section.appendChild(commentElement);
 
     // Comment text box
-    var comment = document.createElement("INPUT");
-    comment.setAttribute("type", "text");
-    comment.setAttribute("value", "comment");
-    comment.setAttribute("class", "commentButton");
+    const comment = createElement('INPUT', "", {type: 'text', class: 'commentBox', value: 'comment'});
     section.appendChild(comment);
 
     // when it was posted
@@ -109,7 +97,6 @@ export function createPostTile(post) {
     reqTime += curMinute + ":";
     reqTime += curSecond;
     section.appendChild(createElement('p', reqTime, {class: 'post-desc'}));
-
     return section;
 
 }

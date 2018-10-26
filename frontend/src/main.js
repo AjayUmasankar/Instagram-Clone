@@ -69,6 +69,35 @@ function homePage() {
 };
 
 
+// Creates the user profile page (only available when logged in)
+async function userProfile() {
+	const currentUser = await getCurrentUser();
+	console.log(currentUser);	
+	const largeFeed = document.getElementById('large-feed');
+	largeFeed.innerHTML = "";
+
+	// Username as title, userid, username, email, followers as description
+	const section = createElement('section', null, { class: 'post' });
+    section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
+    section.appendChild(createElement('p', `Your id: ${currentUser.id}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Your email: ${currentUser.email}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Your name: ${currentUser.name}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Followers: ${currentUser.followed_num}`, {class: 'post-desc'}));
+
+    // users that we follow as description
+    const followingElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
+    const expandFollowing = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    const followingList = createElement('div', null, {id:"list"});
+    currentUser.following.map(userID => followingList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    followingElement.appendChild(expandFollowing);
+    followingElement.appendChild(followingList);
+    followingList.hidden = false;
+    section.appendChild(followingElement);
+
+
+    largeFeed.appendChild(section);
+}
+
 
 // Posts the uploaded image, after getImage is successful
 async function postImage(base64) {
@@ -189,7 +218,6 @@ async function login() {
 			header.insertBefore(followIcon, username.nextSibling);
 			followIcon.addEventListener('click', function() {follow()});
 			
-
 			// add a user profile button (to the right of the login icon)
 			const loginIcon = document.getElementById('loginIcon');
 			var profileIcon = document.createElement("div");
@@ -248,45 +276,12 @@ async function login() {
 	});
 }
 
-async function userProfile() {
-	const currentUser = await getCurrentUser();
-	console.log(currentUser);	
-	const largeFeed = document.getElementById('large-feed');
-	largeFeed.innerHTML = "";
 
-	section = createElement('section', null, { class: 'post' });
-    section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
-    section.appendChild(createElement('p', currentUser.id, {class: 'post-desc'}));
-
-    // users that we follow
-    const followingElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
-    const expandFollowing = createElement('i', "expand_more", {class:"material-icons expandLikes"});
-    const followingList = createElement('div', null, {id:"followingList"});
-    currentUser.following.map(userID => followingList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
-    followingElement.appendChild(expandFollowing);
-    followingElement.appendChild(followingList);
-    followingList.hidden = false;
-    section.appendChild(followingElement);
-
-}
-
-async function getCurrentUser() {
-	const token = localStorage.getItem("token");
-	const options = {
-						method: "GET",
-						headers: 
-								{
-									'Authorization': `Token ${token}`, 
-									"Content-Type": "application/json"
-								},
-					}
-	const currentUser = await api.makeAPIRequest("user", options);
-	return currentUser;
-}
-
+// Pressing enter on a commentbox comments on that post as the logged in user 
+// (only available when logged in)
 async function commentPost(event) {
-	const parentNode = event.target.parentNode;
-	const id = parentNode.id;
+	const commentNode = event.target.parentNode;	// contains comment box, comment list, arrow icon
+	const id = commentNode.parentNode.id;			// id of the post
 	const comment = event.target.value;
 	const token = localStorage.getItem("token");
 	const published = new Date();
@@ -308,13 +303,14 @@ async function commentPost(event) {
 	const currentUser = await getCurrentUser(); 
 	const username = currentUser.username;
 	const commentResult = await api.makeAPIRequest(`post/comment?id=${id}`, options);
-	const commentList = parentNode.getElementsByClassName('commentList')[0];
+	const commentList = commentNode.getElementsByClassName('list')[0];
 	commentList.appendChild(createElement('li', `${username}: ${comment}`, {class:"comment"}));
 
 	window.alert(`Comment status: ${commentResult.message}`);
 }
 
-
+// Clicking on the arrow next to lists will toggle the hidden status of the list and 
+// change icon of the arrow
 function toggleList(event) {
 	const parentNode = event.target.parentNode;
 	const commentList = parentNode.getElementsByClassName('list')[0];
@@ -328,12 +324,8 @@ function toggleList(event) {
 }
 
 
-
+// Likes the post as the logged in user (only available when logged in)
 function likePost(event) {
-	//console.log(event);
-	//console.log(event.target);
-	//console.log(event.target.parentNode);
-	//console.log(event.target.parentNode.id);
 	const token = localStorage.getItem("token");
 	const id = event.target.parentNode.id;
 	const options = {
@@ -361,6 +353,21 @@ async function getFeed() {
 					}
 	const feedResult = await api.makeAPIRequest("user/feed", options);
 	return feedResult;
+}
+
+// Gets current user details
+async function getCurrentUser() {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const currentUser = await api.makeAPIRequest("user", options);
+	return currentUser;
 }
 
 homePage();

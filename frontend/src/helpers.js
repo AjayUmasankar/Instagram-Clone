@@ -36,9 +36,6 @@ export function createElement(tag, data, options = {}) {
  */
 export function createPostTile(post) {
     var section = createElement('section', null, { class: 'post', id:post.id });
-
-
-
     // who the post was made by
     section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
 
@@ -75,12 +72,10 @@ export function createPostTile(post) {
     });
     commentElement.appendChild(toggleList);
     commentElement.appendChild(list);
+    const comment = createElement('INPUT', "", {type: 'text', class: 'commentBox', value: 'comment'});
+    commentElement.appendChild(comment);
     list.hidden = false;
     section.appendChild(commentElement);
-
-    // Comment text box
-    const comment = createElement('INPUT', "", {type: 'text', class: 'commentBox', value: 'comment'});
-    section.appendChild(comment);
 
     // when it was posted
     const date = new Date(parseInt(post.meta.published)*1000);

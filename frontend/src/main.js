@@ -1,5 +1,5 @@
 // importing named exports we use brackets
-import { createPostTile, createStaticPostTile, uploadImage, createElement } from './helpers.js';
+import { createPostTile, createStaticPostTile, createViewPostTile, uploadImage, createElement } from './helpers.js';
 
 // when importing 'default' exports, use below syntax
 import API from './api.js';
@@ -94,8 +94,62 @@ async function userProfile() {
     followingList.hidden = false;
     section.appendChild(followingElement);
 
+    // using list of user posts, get total no. of likes and comments.
+    const posts = await getPosts(currentUser.posts);
+    console.log(posts);
+    const likes = posts.map(post => post.meta.likes.length)
+    	 .reduce((acc, likes) => {
+    	 	acc += likes;
+    	 	return acc;
+    	 }, 0)
+
+    const comments = posts.map(post => post.comments.length)
+    	 .reduce((acc, comments) => {
+    	 	acc += comments;
+    	 	return acc;
+    	 }, 0)
+
+   	section.appendChild(createElement('p', `Total Likes: ${likes}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Total Comments: ${comments}`, {class: 'post-desc'}));
+
+    //  most liked post
+   	if (posts.length > 0) {
+   		const mostLiked = posts.reduce((previous, current) => {
+	   		if (current.meta.likes.length > previous.meta.likes.length) {
+	   			return current;
+	   		} else {
+	   			return previous;
+	   		}
+   		});
+	   	section.appendChild(createElement('p', `Most liked post id: ${mostLiked.id} with ${mostLiked.meta.likes.length} likes`, {class: 'post-desc'}));
+	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
+	    section.appendChild(createViewPostTile(mostLiked));
+
+   	}
+
+
 
     largeFeed.appendChild(section);
+}
+
+// given a list of post ids, gives back an array of posts with their info
+async function getPosts(postIds) {
+	var posts = [];
+	const token = localStorage.getItem("token");
+	for (var i = 0; i < postIds.length; i++) {
+		const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+
+		const postResult = await api.makeAPIRequest(`post/?id=${postIds[i]}`, options);
+		posts.push(postResult);
+	}
+	return posts;
 }
 
 
@@ -178,7 +232,11 @@ async function signup() {
 
 	const signupResult = await api.makeAPIRequest("auth/signup", options);
 	console.log(signupResult);
-	window.alert(signupResult.message);
+	if (signupResult.hasOwnProperty("token")) {
+		window.alert(`Signup successful`);
+	} else {
+		window.alert(signupResult.message);
+	}
 }
 
 // Uses the username and password fields to attempt to login
@@ -371,3 +429,20 @@ async function getCurrentUser() {
 }
 
 homePage();
+
+
+ //    var promises = [];
+
+	// for(i=0;i<5;i+){
+	//     promises.push(doSomeAsyncStuff());
+	// }
+
+	// Promise.all(promises)
+ //    .then(() => {
+ //        for(i=0;i<5;i++){
+ //            doSomeStuffOnlyWhenTheAsyncStuffIsFinish();    
+ //        }
+ //    })
+ //    .catch((e) => {
+ //        // handle errors here
+ //    });

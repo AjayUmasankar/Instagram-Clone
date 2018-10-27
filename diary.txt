@@ -19,5 +19,6 @@ are no example posts and users as of yet)
 
 26/10/18	11pm - 12am 	Refactored more, user profile completed with most liked post
 
-27/10/18	10pm - 11.15pm	Implemented infinite scroll (https://stackoverflow.com/questions/22268079/how-to-do-infinite-scrolling-with-javascript-only-without-jquery), based off of this small piece of code by 'webpapaya'
+27/10/18	10pm - 11.30pm	Implemented infinite scroll (https://stackoverflow.com/questions/22268079/how-to-do-infinite-scrolling-with-javascript-only-without-jquery), based off of this small piece of code by 'webpapaya'
+Bugfixes for infinite scroll
 

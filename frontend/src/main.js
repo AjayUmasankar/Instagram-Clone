@@ -33,7 +33,7 @@ async function homePage() {
 	const password = createElement('INPUT', "", {type: 'text', id: 'password', value: 'password'});
 	header.appendChild(password);
 	// login icon
-	const loginButton = createElement('li', "Login", {id: 'loginButton', class: 'nav-item'});
+	const loginButton = createElement('button', "Login", {id: 'loginButton', class: 'nav-item'});
 	header.appendChild(loginButton);
 	// new line
 	header.appendChild(document.createElement("br"));
@@ -44,7 +44,7 @@ async function homePage() {
 	const email = createElement('INPUT', "", {type: 'text', id: 'email', value: 'email'});
 	header.appendChild(email);
 	// signup icon
-	const registerIcon = createElement('li', "Register", {id: 'registerIcon', class: 'nav-item'});
+	const registerIcon = createElement('button', "Register", {id: 'registerIcon', class: 'nav-item'});
 	header.appendChild(registerIcon);
 
 

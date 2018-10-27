@@ -63,26 +63,43 @@ async function homePage() {
 		staticFeed
 		.then(posts => {
 		    posts.reduce((parent, post) => {
-
 		        parent.appendChild(createStaticPostTile(post));
-		        
 		        return parent;
-
 		    }, largeFeed)
 		});
 	} else {
 		createUserFeed();
 		window.alert(`Logged in as ${currentUser.username}`);
-		// Can remove registration fields if necessary !!
-		header.removeChild(email);
-		header.removeChild(registerIcon);
-		header.removeChild(name);
 	}
-
-
-
-
 };
+
+
+// Uses the username and password fields to attempt to login
+async function login() {
+	const password = document.getElementById('password').value;
+	const user = document.getElementById('username').value;
+	const header = document.getElementsByClassName("banner")[0];
+
+	var body = { "username": user, "password": password};
+	var options = 	{
+							headers: { "Content-Type": "application/json" },
+						    method: "POST",
+						    body: JSON.stringify(body),
+					}
+	const loginResult = await api.makeAPIRequest("auth/login", options);
+	
+
+
+	if (loginResult.hasOwnProperty("token")) {
+		// login successful, got token back
+		localStorage.setItem("token", loginResult.token);
+		createUserFeed();
+		console.log(`Logged in as ${user}`);
+	} else {
+		window.alert(loginResult.message);
+		return false;
+	}
+}
 
 
 // Creates the user profile page (only available when logged in)
@@ -109,12 +126,6 @@ async function createUserProfile() {
 		feedButton.addEventListener('click', function() {createUserFeed()});
 	}
 
-	// const profileButton = document.getElementById('profileButton');
-	// var feedButton = profileButton.cloneNode(true);	// removes event listeners
-	// feedButton.innerText = "Feed";
-	// feedButton.setAttribute("id", "feedButton");
-	// feedButton.addEventListener('click', function() {createUserFeed()})
-	// profileButton.replaceWith(feedButton);
 
 	// Username as title, userid, username, email, followers as description
 	const section = createElement('section', null, { class: 'post' });
@@ -173,6 +184,19 @@ async function createUserFeed() {
 	const username = document.getElementById('username');
 	const largefeed = document.getElementById('large-feed');
 	largefeed.innerHTML = "";
+
+	// CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
+	// This if statement is only activated on the first login since we remove 
+	// the name email and registerIcon fields
+	var name = document.getElementById("name");
+	var email = document.getElementById("email");
+	var registerIcon = document.getElementById("registerIcon");
+	if (name && email && registerIcon) {
+		// removing name, email and register fields
+		header.removeChild(name);
+		header.removeChild(email);
+		header.removeChild(registerIcon);
+	}
 
 
 	// Create follow button if it doesnt already exist (places it after username)
@@ -239,8 +263,25 @@ async function createUserFeed() {
 			    }
 			})
 		}
-
 	});
+
+	document.addEventListener("scroll", function (event) {
+    	checkForNewDiv();
+	});
+
+	var checkForNewDiv = function () {
+	    var lastDiv = document.getElementsByTagName("footer")[0];
+	    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
+	    var pageOffset = window.pageYOffset + window.innerHeight;
+
+	    if (pageOffset > lastDivOffset - 10) {
+	        var newDiv = document.createElement("div");
+	        newDiv.innerHTML = "my awesome new div";
+	        lastDiv.appendChild(newDiv);
+	        //document.getElementById("scroll-content").appendChild(newDiv);
+	        checkForNewDiv();
+	    }
+	};
 }
 
 // given a list of post ids, gives back an array of posts with their info
@@ -361,50 +402,6 @@ async function signup() {
 	} else {
 		window.alert(signupResult.message);
 	}
-}
-
-// Uses the username and password fields to attempt to login
-async function login() {
-	const password = document.getElementById('password').value;
-	const user = document.getElementById('username').value;
-	const header = document.getElementsByClassName("banner")[0];
-
-	var body = { "username": user, "password": password};
-	var options = 	{
-							headers: { "Content-Type": "application/json" },
-						    method: "POST",
-						    body: JSON.stringify(body),
-					}
-	const loginResult = await api.makeAPIRequest("auth/login", options);
-	
-
-
-	if (loginResult.hasOwnProperty("token")) {
-		// login successful, got token back
-		localStorage.setItem("token", loginResult.token);
-		createUserFeed();
-
-		// CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
-		// // This if statement is only activated on the first login since we remove 
-		// // the name email and registerIcon fields
-		// var name = document.getElementById("name");
-		// var email = document.getElementById("email");
-		// var registerIcon = document.getElementById("registerIcon");
-		// if (name && email && registerIcon) {
-		// 	// removing name, email and register fields
-		// 	header.removeChild(name);
-		// 	header.removeChild(email);
-		// 	header.removeChild(registerIcon);
-
-		// }
-		
-		console.log(`Logged in as ${user}`);
-	} else {
-		window.alert(loginResult.message);
-		return false;
-	}
-
-
 }
 
 
@@ -528,3 +525,11 @@ homePage();
  //    .catch((e) => {
  //        // handle errors here
  //    });
+
+
+ 	// const profileButton = document.getElementById('profileButton');
+	// var feedButton = profileButton.cloneNode(true);	// removes event listeners
+	// feedButton.innerText = "Feed";
+	// feedButton.setAttribute("id", "feedButton");
+	// feedButton.addEventListener('click', function() {createUserFeed()})
+	// profileButton.replaceWith(feedButton);

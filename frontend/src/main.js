@@ -52,7 +52,7 @@ header.appendChild(updateButton);
 
 // add event listeners for profile feed and follow buttons
 feedButton.addEventListener('click', function() {createUserFeed()});
-profileButton.addEventListener('click', function() {createUserProfile()})
+profileButton.addEventListener('click', async function() {createUserProfile(await getCurrentUser())})
 followButton.addEventListener('click', function() {follow()});
 updateButton.addEventListener('click', function() {updateUser()})
 // Adding event listeners to login/signup
@@ -81,10 +81,12 @@ async function startingPage() {
 		return;
 	} 
 	// previous token used to login user
-	loginSetup();
+
 	if (fragment == "#profile=me") {
-		createUserProfile();
+		loginSetup();
+		createUserProfile(await getCurrentUser());
 	} else if (fragment == "#feed") {
+		loginSetup();
 		createUserFeed();
 	} else if (fragment.startsWith("#profile=")) {
 		const targetUser = fragment.substring(9);
@@ -94,8 +96,141 @@ async function startingPage() {
 
 async function createUserPage(user) {
 	console.log(user);
-	console.log(await getUserByName(user));
+	createUserProfile(await getUserByName(user));
 }
+// This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
+// only once when nearing the end of the page.
+var timer;
+function delayGetNextPost() {
+	if (timer) {
+		clearTimeout(timer);
+	}
+	timer = setTimeout(getNextPost, 100);
+}
+
+async function getNextPost() {
+	const largefeed = document.getElementById('large-feed');
+    var lastDiv = document.getElementsByTagName("footer")[0];
+    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
+    var pageOffset = window.pageYOffset + window.innerHeight;
+
+    if (pageOffset > lastDivOffset - 20) {
+    	await getCurrentFeed().then(feed => feed.posts)
+    	.then(posts => posts[0])
+    	.then(post => {
+    		const postElement = createPostTile(post);
+    		largefeed.appendChild(postElement);
+    		
+    		// add event listeners to like buttons
+			const likeButton = postElement.getElementsByClassName('likeButton')[0];
+			likeButton.addEventListener('click', likePost);
+
+			// add event listeners to toggle show comments/likes
+			const listButton = postElement.getElementsByClassName('toggleList')[0];
+			listButton.addEventListener('click', toggleList);
+
+			// add event listeners to allow comments to be made
+			const commentBox = postElement.getElementsByClassName('commentBox')[0];
+			commentBox.addEventListener('keypress', function (e) {
+			    var key = e.which || e.keyCode;
+			    if (key === 13) { // 13 is enter
+			      	commentPost(e);
+			    }
+			})
+    	});
+        // var newDiv = document.createElement("div");
+        // newDiv.innerHTML = "my awesome new div";
+        // lastDiv.appendChild(newDiv);
+        setTimeout(getNextPost, 100);
+    }
+};
+
+async function createUserFeed() {
+	const header = document.getElementsByClassName("banner")[0];
+	const username = document.getElementById('username');
+	const largefeed = document.getElementById('large-feed');
+	largefeed.innerHTML = "";
+	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
+
+	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
+	// // This if statement is only activated on the first login since we remove 
+	// // the name email and registerButton fields
+	// var name = document.getElementById("name");
+	// var email = document.getElementById("email");
+	// var registerButton = document.getElementById("registerButton");
+	// if (name && email && registerButton) {
+	// 	// removing name, email and register fields
+	// 	header.removeChild(name);
+	// 	header.removeChild(email);
+	// 	header.removeChild(registerButton);
+	// }
+
+	// Create current user feed
+	document.addEventListener("scroll", delayGetNextPost);
+	await getNextPost();
+}
+
+// Creates the user profile page (only available when logged in)
+async function createUserProfile(currentUser) {
+	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
+	//const currentUser = await getCurrentUser();
+	console.log(currentUser);
+	const largeFeed = document.getElementById('large-feed');
+	largeFeed.innerHTML = "";
+
+	// Username as title, userid, username, email, followers as description
+	const section = createElement('section', null, { class: 'post' });
+    section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
+    section.appendChild(createElement('p', `Id: ${currentUser.id}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Email: ${currentUser.email}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Name: ${currentUser.name}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Followers: ${currentUser.followed_num}`, {class: 'post-desc'}));
+
+    // users that we follow as description
+    const followingElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
+    const expandFollowing = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    const followingList = createElement('div', null, {id:"list"});
+    currentUser.following.map(userID => followingList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    followingElement.appendChild(expandFollowing);
+    followingElement.appendChild(followingList);
+    followingList.hidden = false;
+    section.appendChild(followingElement);
+
+    // using list of user posts, get total no. of likes and comments.
+    const posts = await getPosts(currentUser.posts);
+    const likes = posts.map(post => post.meta.likes.length)
+    	 .reduce((acc, likes) => {
+    	 	acc += likes;
+    	 	return acc;
+    	 }, 0)
+
+    const comments = posts.map(post => post.comments.length)
+    	 .reduce((acc, comments) => {
+    	 	acc += comments;
+    	 	return acc;
+    	 }, 0)
+
+   	section.appendChild(createElement('p', `Total Likes: ${likes}`, {class: 'post-desc'}));
+    section.appendChild(createElement('p', `Total Comments: ${comments}`, {class: 'post-desc'}));
+
+    //  most liked post
+   	if (posts.length > 0) {
+   		const mostLiked = posts.reduce((previous, current) => {
+	   		if (current.meta.likes.length > previous.meta.likes.length) {
+	   			return current;
+	   		} else {
+	   			return previous;
+	   		}
+   		});
+	   	section.appendChild(createElement('p', `Most liked post id: ${mostLiked.id} with ${mostLiked.meta.likes.length} likes`, {class: 'post-desc'}));
+	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
+	    section.appendChild(createViewPostTile(mostLiked));
+   	}
+    largeFeed.appendChild(section);
+}
+
+
+
 
 // Updates current user's details with contents of name, password and email text boxes
 async function updateUser() {
@@ -163,138 +298,8 @@ async function login() {
 }
 
 
-// Creates the user profile page (only available when logged in)
-async function createUserProfile() {
-	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
-	const currentUser = await getCurrentUser();
-	console.log(currentUser);
-	const largeFeed = document.getElementById('large-feed');
-	largeFeed.innerHTML = "";
 
-	// Username as title, userid, username, email, followers as description
-	const section = createElement('section', null, { class: 'post' });
-    section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
-    section.appendChild(createElement('p', `Your id: ${currentUser.id}`, {class: 'post-desc'}));
-    section.appendChild(createElement('p', `Your email: ${currentUser.email}`, {class: 'post-desc'}));
-    section.appendChild(createElement('p', `Your name: ${currentUser.name}`, {class: 'post-desc'}));
-    section.appendChild(createElement('p', `Followers: ${currentUser.followed_num}`, {class: 'post-desc'}));
 
-    // users that we follow as description
-    const followingElement = createElement('p', `${currentUser.following.length} following`, {class: 'post-desc'});
-    const expandFollowing = createElement('i', "expand_more", {class:"material-icons toggleList"});
-    const followingList = createElement('div', null, {id:"list"});
-    currentUser.following.map(userID => followingList.appendChild(createElement('li', `${userID}`, {class:"userID"})));
-    followingElement.appendChild(expandFollowing);
-    followingElement.appendChild(followingList);
-    followingList.hidden = false;
-    section.appendChild(followingElement);
-
-    // using list of user posts, get total no. of likes and comments.
-    const posts = await getPosts(currentUser.posts);
-    const likes = posts.map(post => post.meta.likes.length)
-    	 .reduce((acc, likes) => {
-    	 	acc += likes;
-    	 	return acc;
-    	 }, 0)
-
-    const comments = posts.map(post => post.comments.length)
-    	 .reduce((acc, comments) => {
-    	 	acc += comments;
-    	 	return acc;
-    	 }, 0)
-
-   	section.appendChild(createElement('p', `Total Likes: ${likes}`, {class: 'post-desc'}));
-    section.appendChild(createElement('p', `Total Comments: ${comments}`, {class: 'post-desc'}));
-
-    //  most liked post
-   	if (posts.length > 0) {
-   		const mostLiked = posts.reduce((previous, current) => {
-	   		if (current.meta.likes.length > previous.meta.likes.length) {
-	   			return current;
-	   		} else {
-	   			return previous;
-	   		}
-   		});
-	   	section.appendChild(createElement('p', `Most liked post id: ${mostLiked.id} with ${mostLiked.meta.likes.length} likes`, {class: 'post-desc'}));
-	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
-	    section.appendChild(createViewPostTile(mostLiked));
-   	}
-    largeFeed.appendChild(section);
-
-}
-
-async function createUserFeed() {
-	const header = document.getElementsByClassName("banner")[0];
-	const username = document.getElementById('username');
-	const largefeed = document.getElementById('large-feed');
-	largefeed.innerHTML = "";
-	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
-
-	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
-	// // This if statement is only activated on the first login since we remove 
-	// // the name email and registerButton fields
-	// var name = document.getElementById("name");
-	// var email = document.getElementById("email");
-	// var registerButton = document.getElementById("registerButton");
-	// if (name && email && registerButton) {
-	// 	// removing name, email and register fields
-	// 	header.removeChild(name);
-	// 	header.removeChild(email);
-	// 	header.removeChild(registerButton);
-	// }
-
-	// Create current user feed
-	document.addEventListener("scroll", delayGetNextPost);
-	await getNextPost();
-
-}
-
-// This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
-// only once when nearing the end of the page.
-var timer;
-function delayGetNextPost() {
-	if (timer) {
-		clearTimeout(timer);
-	}
-	timer = setTimeout(getNextPost, 100);
-}
-
-async function getNextPost() {
-	const largefeed = document.getElementById('large-feed');
-    var lastDiv = document.getElementsByTagName("footer")[0];
-    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
-    var pageOffset = window.pageYOffset + window.innerHeight;
-
-    if (pageOffset > lastDivOffset - 20) {
-    	await getFeed().then(feed => feed.posts)
-    	.then(posts => posts[0])
-    	.then(post => {
-    		const postElement = createPostTile(post);
-    		largefeed.appendChild(postElement);
-    		
-    		// add event listeners to like buttons
-			const likeButton = postElement.getElementsByClassName('likeButton')[0];
-			likeButton.addEventListener('click', likePost);
-
-			// add event listeners to toggle show comments/likes
-			const listButton = postElement.getElementsByClassName('toggleList')[0];
-			listButton.addEventListener('click', toggleList);
-
-			// add event listeners to allow comments to be made
-			const commentBox = postElement.getElementsByClassName('commentBox')[0];
-			commentBox.addEventListener('keypress', function (e) {
-			    var key = e.which || e.keyCode;
-			    if (key === 13) { // 13 is enter
-			      	commentPost(e);
-			    }
-			})
-    	});
-        // var newDiv = document.createElement("div");
-        // newDiv.innerHTML = "my awesome new div";
-        // lastDiv.appendChild(newDiv);
-        setTimeout(getNextPost, 100);
-    }
-};
 
 // given a list of post ids, gives back an array of posts with their info
 async function getPosts(postIds) {
@@ -488,7 +493,7 @@ async function likePost(event) {
 
 
 // Gets current user's feed
-async function getFeed() {
+async function getCurrentFeed() {
 	const token = localStorage.getItem("token");
 	const options = {
 						method: "GET",

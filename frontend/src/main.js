@@ -68,11 +68,26 @@ async function homePage() {
 		    }, largeFeed)
 		});
 	} else {
+		loginSetup(); 
 		createUserFeed();
 		//window.alert(`Logged in as ${currentUser.username}`);
 	}
 };
 
+// adds functions that are only available to a logged in user (either via local stored 
+// token or manually clicking login)
+async function loginSetup() {
+	// Create follow button if it doesnt already exist (places it after username)
+	var followButton = document.getElementById('followButton');
+	const header = document.getElementsByClassName("banner")[0];
+	const username = document.getElementById('username');
+
+	if (!followButton) {
+		const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item'});
+		header.insertBefore(followButton, username.nextSibling);
+		followButton.addEventListener('click', function() {follow()});
+	}
+}
 
 // Uses the username and password fields to attempt to login
 async function login() {
@@ -93,6 +108,8 @@ async function login() {
 	if (loginResult.hasOwnProperty("token")) {
 		// login successful, got token back
 		localStorage.setItem("token", loginResult.token);
+		// currently, a successful login means that you go straight to ur feed
+		loginSetup();
 		createUserFeed();
 		console.log(`Logged in as ${user}`);
 	} else {
@@ -203,13 +220,7 @@ async function createUserFeed() {
 	// }
 
 
-	// Create follow button if it doesnt already exist (places it after username)
-	var followButton = document.getElementById('followButton');
-	if (!followButton) {
-		const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item'});
-		header.insertBefore(followButton, username.nextSibling);
-		followButton.addEventListener('click', function() {follow()});
-	}
+
 
 
 	// Change the feed button into a profile button if it exists, else create a profile button

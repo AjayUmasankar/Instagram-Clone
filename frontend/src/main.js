@@ -8,6 +8,7 @@ const api  = new API();
 
 
 var fed = 0;
+const largefeed = document.getElementById('large-feed');
 const header = document.getElementsByClassName("banner")[0];
 header.style.display = 'table-cell';
 
@@ -80,8 +81,8 @@ async function startingPage() {
 		});
 		return;
 	} 
-	// previous token used to login user
 
+	// previous token used to login user
 	if (fragment == "#profile=me") {
 		loginSetup();
 		createUserProfile(await getCurrentUser());
@@ -95,9 +96,39 @@ async function startingPage() {
 }
 
 async function createUserPage(user) {
-	console.log(user);
-	createUserProfile(await getUserByName(user));
+	//console.log(user);
+	const userDetails = await getUserByName(user);
+	createUserProfile(userDetails);
+	const posts = userDetails.posts;
+	for (var i = posts.length-1; i >= 0 ; i--) {
+		const postElement = await getPost(posts[i]);
+		//console.log(postElement);
+		largefeed.appendChild(createPostTile(postElement));
+	}
+	// Create current user feed
+	//console.log(userDetails);
 }
+
+async function getPost(id) {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	const getPostResult = await api.makeAPIRequest(`post/?id=${id}`, options);
+	if (!getPostResult.hasOwnProperty("id")) {
+		window.alert(`get post failed`);
+	} else {
+		//window.alert(` has been liked`);
+	}
+	return getPostResult;
+}
+
+
 // This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
 // only once when nearing the end of the page.
 var timer;
@@ -109,7 +140,6 @@ function delayGetNextPost() {
 }
 
 async function getNextPost() {
-	const largefeed = document.getElementById('large-feed');
     var lastDiv = document.getElementsByTagName("footer")[0];
     var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
     var pageOffset = window.pageYOffset + window.innerHeight;
@@ -120,7 +150,7 @@ async function getNextPost() {
     	.then(post => {
     		const postElement = createPostTile(post);
     		largefeed.appendChild(postElement);
-    		
+    		//addPostEventListeners(post);
     		// add event listeners to like buttons
 			const likeButton = postElement.getElementsByClassName('likeButton')[0];
 			likeButton.addEventListener('click', likePost);
@@ -145,6 +175,7 @@ async function getNextPost() {
     }
 };
 
+// Gets the current user's feed (via local storage auth token)
 async function createUserFeed() {
 	const header = document.getElementsByClassName("banner")[0];
 	const username = document.getElementById('username');
@@ -170,7 +201,7 @@ async function createUserFeed() {
 	await getNextPost();
 }
 
-// Creates the user profile page (only available when logged in)
+// Creates the user profile page 
 async function createUserProfile(currentUser) {
 	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
 	//const currentUser = await getCurrentUser();
@@ -180,6 +211,7 @@ async function createUserProfile(currentUser) {
 
 	// Username as title, userid, username, email, followers as description
 	const section = createElement('section', null, { class: 'post' });
+	largeFeed.appendChild(section);
     section.appendChild(createElement('h2', currentUser.username, { class: 'post-title' }));
     section.appendChild(createElement('p', `Id: ${currentUser.id}`, {class: 'post-desc'}));
     section.appendChild(createElement('p', `Email: ${currentUser.email}`, {class: 'post-desc'}));
@@ -226,7 +258,7 @@ async function createUserProfile(currentUser) {
 	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
 	    section.appendChild(createViewPostTile(mostLiked));
    	}
-    largeFeed.appendChild(section);
+
 }
 
 
@@ -492,22 +524,7 @@ async function likePost(event) {
 }
 
 
-// Gets current user's feed
-async function getCurrentFeed() {
-	const token = localStorage.getItem("token");
-	const options = {
-						method: "GET",
-						headers: 
-								{
-									'Authorization': `Token ${token}`, 
-									"Content-Type": "application/json"
-								},
-					}
-	fed += 1;
-	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=1`, options);
-	return feedResult;
-}
-
+// Gets user details by passing in user's name
 async function getUserByName(username) {
 	const token = localStorage.getItem("token");
 	const options = {
@@ -536,4 +553,21 @@ async function getCurrentUser() {
 	const currentUser = await api.makeAPIRequest("user", options);
 	//const currentUser = getUser(token, "", "");
 	return currentUser;
+}
+
+
+// Gets current user's feed
+async function getCurrentFeed() {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`, 
+									"Content-Type": "application/json"
+								},
+					}
+	fed += 1;
+	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=1`, options);
+	return feedResult;
 }

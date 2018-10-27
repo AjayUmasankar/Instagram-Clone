@@ -18,3 +18,6 @@ are no example posts and users as of yet)
 26/10/18	8.30pm - 10.30pm 	Refactored code a bunch and made a basic user profile page, more error codes implemented for feedback to user, live comments implemented
 
 26/10/18	11pm - 12am 	Refactored more, user profile completed with most liked post
+
+27/10/18	10pm - 11.15pm	Implemented infinite scroll (https://stackoverflow.com/questions/22268079/how-to-do-infinite-scrolling-with-javascript-only-without-jquery), based off of this small piece of code by 'webpapaya'
+

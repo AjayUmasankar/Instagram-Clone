@@ -104,6 +104,7 @@ async function login() {
 
 // Creates the user profile page (only available when logged in)
 async function createUserProfile() {
+	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
 	const currentUser = await getCurrentUser();
 	console.log(currentUser);
 	const largeFeed = document.getElementById('large-feed');
@@ -111,20 +112,20 @@ async function createUserProfile() {
 
 	// Change the profile button to a new button that goes back to the users feed
 	var profileButton = document.getElementById('profileButton');
+	var feedButton;
 	if (profileButton) {
 		// replace profileButton
-		const feedButton = profileButton.cloneNode(true);	// removes past eventListeners
+		feedButton = profileButton.cloneNode(true);	// removes past eventListeners
 		feedButton.innerText = "Feed";
 		feedButton.setAttribute("id", "feedButton");
-		feedButton.addEventListener('click', function() {createUserFeed()})
 		profileButton.replaceWith(feedButton);
 	} else {
 		// add a user profile button (to the right of the login icon)
 		const loginButton = document.getElementById('loginButton');
-		const feedButton = createElement('button', "Feed", {id: 'feedButton', class: 'nav-item', style: 'float:right'});
+		feedButton = createElement('button', "Feed", {id: 'feedButton', class: 'nav-item', style: 'float:right'});
 		loginButton.parentNode.insertBefore(feedButton, loginButton.nextSibling);
-		feedButton.addEventListener('click', function() {createUserFeed()});
 	}
+
 
 
 	// Username as title, userid, username, email, followers as description
@@ -176,6 +177,8 @@ async function createUserProfile() {
 	    section.appendChild(createViewPostTile(mostLiked));
    	}
     largeFeed.appendChild(section);
+    // add event listener to go back to feed after profile is properly created
+    feedButton.addEventListener('click', function() {createUserFeed()});
 
 }
 
@@ -184,19 +187,20 @@ async function createUserFeed() {
 	const username = document.getElementById('username');
 	const largefeed = document.getElementById('large-feed');
 	largefeed.innerHTML = "";
+	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
 
-	// CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
-	// This if statement is only activated on the first login since we remove 
-	// the name email and registerIcon fields
-	var name = document.getElementById("name");
-	var email = document.getElementById("email");
-	var registerIcon = document.getElementById("registerIcon");
-	if (name && email && registerIcon) {
-		// removing name, email and register fields
-		header.removeChild(name);
-		header.removeChild(email);
-		header.removeChild(registerIcon);
-	}
+	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
+	// // This if statement is only activated on the first login since we remove 
+	// // the name email and registerIcon fields
+	// var name = document.getElementById("name");
+	// var email = document.getElementById("email");
+	// var registerIcon = document.getElementById("registerIcon");
+	// if (name && email && registerIcon) {
+	// 	// removing name, email and register fields
+	// 	header.removeChild(name);
+	// 	header.removeChild(email);
+	// 	header.removeChild(registerIcon);
+	// }
 
 
 	// Create follow button if it doesnt already exist (places it after username)
@@ -209,115 +213,77 @@ async function createUserFeed() {
 
 
 	// Change the feed button into a profile button if it exists, else create a profile button
-	var profileButton = document.getElementById('profileButton');
-	if (!profileButton) { 
-		var feedButton = document.getElementById('feedButton');
-		if (feedButton) {
-			// replace feedButton
-			profileButton = feedButton.cloneNode(true);	// removes past eventListeners
-			profileButton.innerText = "Profile";
-			profileButton.setAttribute("id", "profileButton");
-			profileButton.addEventListener('click', function() {createUserProfile()})
-			feedButton.replaceWith(profileButton);
-		} else {
-			// add a user profile button (to the right of the login icon)
-			const loginButton = document.getElementById('loginButton');
-			profileButton = createElement('button', "Profile", {id: 'profileButton', class: 'nav-item', style: 'float:right'});
-			loginButton.parentNode.insertBefore(profileButton, loginButton.nextSibling);
-			profileButton.addEventListener('click', function() {createUserProfile()});
-		}
+	// var profileButton = document.getElementById('profileButton');
+	// if (!profileButton) { 
+	var feedButton = document.getElementById('feedButton');
+	var profileButton;
+	if (feedButton) {
+		// replace feedButton
+		profileButton = feedButton.cloneNode(true);	// removes past eventListeners
+		profileButton.innerText = "Profile";
+		profileButton.setAttribute("id", "profileButton");
+		feedButton.replaceWith(profileButton);
+	} else {
+		// add a user profile button (to the right of the login icon)
+		const loginButton = document.getElementById('loginButton');
+		profileButton = createElement('button', "Profile", {id: 'profileButton', class: 'nav-item', style: 'float:right'});
+		loginButton.parentNode.insertBefore(profileButton, loginButton.nextSibling);
 	}
+	
 
 	// Create current user feed
-	fed = 0;
-	// getFeed()
-	// .then(posts => {
-	// 	// add posts with likes/comments/time published/like button;
-	// 	const postsArray = posts.posts;
-	// 	console.log(postsArray);
-	//     postsArray.reduce((parent, post) => {
-	//         parent.appendChild(createPostTile(post));
-	//         return parent;
-	//     }, document.getElementById('large-feed'))
-	// })
-	// .then(function() {
-	// 	// add event listeners to like buttons
-	// 	const likeButtons = document.getElementsByClassName('likeButton');
-	// 	for (var i = 0; i < likeButtons.length; i++) {
-	// 		likeButtons[i].addEventListener('click', likePost);
-	// 	}
-
-	// 	// add event listeners to toggle show comments/likes
-	// 	const listButtons = document.getElementsByClassName('toggleList');
-	// 	for (var i = 0; i < listButtons.length; i++) {
-	// 		listButtons[i].addEventListener('click', toggleList);
-	// 	}
-
-	// 	// add event listeners to allow comments to be made
-	// 	const commentBoxes = document.getElementsByClassName('commentBox');
-	// 	for (var i = 0; i < commentBoxes.length; i++) {
-	// 		commentBoxes[i].addEventListener('keypress', function (e) {
-	// 		    var key = e.which || e.keyCode;
-	// 		    if (key === 13) { // 13 is enter
-	// 		      	commentPost(e);
-	// 		    }
-	// 		})
-	// 	}
-	// });
-
-	var infiniteScroll = async function () {
-	    var lastDiv = document.getElementsByTagName("footer")[0];
-	    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
-	    var pageOffset = window.pageYOffset + window.innerHeight;
-
-	    if (pageOffset > lastDivOffset - 20) {
-	    	await getFeed().then(feed => feed.posts)
-	    	.then(posts => posts[0])
-	    	.then(post => {
-	    		const postElement = createPostTile(post);
-	    		largefeed.appendChild(postElement);
-	    		
-	    		// add event listeners to like buttons
-				const likeButtons = postElement.getElementsByClassName('likeButton')[0];
-				for (var i = 0; i < likeButtons.length; i++) {
-					likeButtons[i].addEventListener('click', likePost);
-				}
-
-				// add event listeners to toggle show comments/likes
-				const listButtons = postElement.getElementsByClassName('toggleList')[0];
-				for (var i = 0; i < listButtons.length; i++) {
-					listButtons[i].addEventListener('click', toggleList);
-				}
-
-				// add event listeners to allow comments to be made
-				const commentBoxes = postElement.getElementsByClassName('commentBox')[0];
-				for (var i = 0; i < commentBoxes.length; i++) {
-					commentBoxes[i].addEventListener('keypress', function (e) {
-					    var key = e.which || e.keyCode;
-					    if (key === 13) { // 13 is enter
-					      	commentPost(e);
-					    }
-					})
-				}
-
-	    	});
-	        // var newDiv = document.createElement("div");
-	        // newDiv.innerHTML = "my awesome new div";
-	        // lastDiv.appendChild(newDiv);
-	        setTimeout(infiniteScroll, 100);
-	    }
-	};
-
-	var timer;
-	document.addEventListener("scroll", function (event) {
-		if (timer) {
-			clearTimeout(timer);
-		}
-    	timer = setTimeout(infiniteScroll, 100);
-	});
-
-	infiniteScroll();
+	document.addEventListener("scroll", delayGetNextPost);
+	await getNextPost();
+	// add event listener to go back to profile after basic feed is made
+	profileButton.addEventListener('click', function() {createUserProfile()})
 }
+
+// This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
+// only once when nearing the end of the page.
+var timer;
+function delayGetNextPost() {
+	if (timer) {
+		clearTimeout(timer);
+	}
+	timer = setTimeout(getNextPost, 100);
+}
+
+async function getNextPost() {
+	const largefeed = document.getElementById('large-feed');
+    var lastDiv = document.getElementsByTagName("footer")[0];
+    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
+    var pageOffset = window.pageYOffset + window.innerHeight;
+
+    if (pageOffset > lastDivOffset - 20) {
+    	await getFeed().then(feed => feed.posts)
+    	.then(posts => posts[0])
+    	.then(post => {
+    		const postElement = createPostTile(post);
+    		largefeed.appendChild(postElement);
+    		
+    		// add event listeners to like buttons
+			const likeButton = postElement.getElementsByClassName('likeButton')[0];
+			likeButton.addEventListener('click', likePost);
+
+			// add event listeners to toggle show comments/likes
+			const listButton = postElement.getElementsByClassName('toggleList')[0];
+			listButton.addEventListener('click', toggleList);
+
+			// add event listeners to allow comments to be made
+			const commentBox = postElement.getElementsByClassName('commentBox')[0];
+			commentBox.addEventListener('keypress', function (e) {
+			    var key = e.which || e.keyCode;
+			    if (key === 13) { // 13 is enter
+			      	commentPost(e);
+			    }
+			})
+    	});
+        // var newDiv = document.createElement("div");
+        // newDiv.innerHTML = "my awesome new div";
+        // lastDiv.appendChild(newDiv);
+        setTimeout(getNextPost, 100);
+    }
+};
 
 // given a list of post ids, gives back an array of posts with their info
 async function getPosts(postIds) {
@@ -568,3 +534,39 @@ homePage();
 	// feedButton.setAttribute("id", "feedButton");
 	// feedButton.addEventListener('click', function() {createUserFeed()})
 	// profileButton.replaceWith(feedButton);
+
+
+		// getFeed()
+	// .then(posts => {
+	// 	// add posts with likes/comments/time published/like button;
+	// 	const postsArray = posts.posts;
+	// 	console.log(postsArray);
+	//     postsArray.reduce((parent, post) => {
+	//         parent.appendChild(createPostTile(post));
+	//         return parent;
+	//     }, document.getElementById('large-feed'))
+	// })
+	// .then(function() {
+	// 	// add event listeners to like buttons
+	// 	const likeButtons = document.getElementsByClassName('likeButton');
+	// 	for (var i = 0; i < likeButtons.length; i++) {
+	// 		likeButtons[i].addEventListener('click', likePost);
+	// 	}
+
+	// 	// add event listeners to toggle show comments/likes
+	// 	const listButtons = document.getElementsByClassName('toggleList');
+	// 	for (var i = 0; i < listButtons.length; i++) {
+	// 		listButtons[i].addEventListener('click', toggleList);
+	// 	}
+
+	// 	// add event listeners to allow comments to be made
+	// 	const commentBoxes = document.getElementsByClassName('commentBox');
+	// 	for (var i = 0; i < commentBoxes.length; i++) {
+	// 		commentBoxes[i].addEventListener('keypress', function (e) {
+	// 		    var key = e.which || e.keyCode;
+	// 		    if (key === 13) { // 13 is enter
+	// 		      	commentPost(e);
+	// 		    }
+	// 		})
+	// 	}
+	// });

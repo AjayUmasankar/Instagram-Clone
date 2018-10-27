@@ -16,3 +16,5 @@ are no example posts and users as of yet)
 							Can comment on posts and show who commented on the post
 
 26/10/18	8.30pm - 10.30pm 	Refactored code a bunch and made a basic user profile page, more error codes implemented for feedback to user, live comments implemented
+
+26/10/18	11pm - 12am 	Refactored more, user profile completed with most liked post

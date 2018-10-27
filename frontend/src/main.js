@@ -13,25 +13,17 @@ const api  = new API();
 
 
 // Constructs home page
-function homePage() {
+async function homePage() {
 	const header = document.getElementsByClassName("banner")[0];
 	// removing 'flex' attribute for header and making it a table-cell
 	header.style.display = 'table-cell';
 
-	const largeFeed = document.getElementById('large-feed');
-	largeFeed.innerHTML = "";
-	// creating a basic static feed as an example 
-	const staticFeed = api.getStaticFeed();
-	staticFeed
-	.then(posts => {
-	    posts.reduce((parent, post) => {
-
-	        parent.appendChild(createStaticPostTile(post));
-	        
-	        return parent;
-
-	    }, largeFeed)
-	});
+	// allows files to be uploaded via post button
+	var postButton = document.getElementsByClassName("nav-item")[1];
+	postButton.innerText = "Post";
+	const input = document.querySelector('input[type="file"]');
+	//input.addEventListener('change', uploadImage);
+	postButton.addEventListener('click', function() {getImage()});
 
 
 	// username text box
@@ -41,8 +33,8 @@ function homePage() {
 	const password = createElement('INPUT', "", {type: 'text', id: 'password', value: 'password'});
 	header.appendChild(password);
 	// login icon
-	const loginIcon = createElement('li', "Login", {id: 'loginIcon', class: 'nav-item'});
-	header.appendChild(loginIcon);
+	const loginButton = createElement('li', "Login", {id: 'loginButton', class: 'nav-item'});
+	header.appendChild(loginButton);
 	// new line
 	header.appendChild(document.createElement("br"));
 	// name text box
@@ -54,27 +46,75 @@ function homePage() {
 	// signup icon
 	const registerIcon = createElement('li', "Register", {id: 'registerIcon', class: 'nav-item'});
 	header.appendChild(registerIcon);
-	// post icon
-	var postIcon = document.getElementsByClassName("nav-item")[1];
-	postIcon.innerText = "Post";
+
 
 	// Adding functions to login/signup
-	loginIcon.addEventListener('click', function() {login()});
+	loginButton.addEventListener('click', function() {login()});
 	registerIcon.addEventListener('click', function() {signup()});
-	postIcon.addEventListener('click', function() {getImage()});
 
-	// reading in a file
-	const input = document.querySelector('input[type="file"]');
-	input.addEventListener('change', uploadImage);
+
+	const currentUser = await getCurrentUser();
+	// Checking if there is a valid localStorage token already
+	if (!currentUser.hasOwnProperty('id')) {
+		// create a basic static feed
+		const largeFeed = document.getElementById('large-feed');
+		largeFeed.innerHTML = "";
+		const staticFeed = api.getStaticFeed();
+		staticFeed
+		.then(posts => {
+		    posts.reduce((parent, post) => {
+
+		        parent.appendChild(createStaticPostTile(post));
+		        
+		        return parent;
+
+		    }, largeFeed)
+		});
+	} else {
+		createUserFeed();
+		window.alert(`Logged in as ${currentUser.username}`);
+		// Can remove registration fields if necessary !!
+		header.removeChild(email);
+		header.removeChild(registerIcon);
+		header.removeChild(name);
+	}
+
+
+
+
 };
 
 
 // Creates the user profile page (only available when logged in)
-async function userProfile() {
+async function createUserProfile() {
 	const currentUser = await getCurrentUser();
-	console.log(currentUser);	
+	console.log(currentUser);
 	const largeFeed = document.getElementById('large-feed');
 	largeFeed.innerHTML = "";
+
+	// Change the profile button to a new button that goes back to the users feed
+	var profileButton = document.getElementById('profileButton');
+	if (profileButton) {
+		// replace profileButton
+		const feedButton = profileButton.cloneNode(true);	// removes past eventListeners
+		feedButton.innerText = "Feed";
+		feedButton.setAttribute("id", "feedButton");
+		feedButton.addEventListener('click', function() {createUserFeed()})
+		profileButton.replaceWith(feedButton);
+	} else {
+		// add a user profile button (to the right of the login icon)
+		const loginButton = document.getElementById('loginButton');
+		const feedButton = createElement('button', "Feed", {id: 'feedButton', class: 'nav-item', style: 'float:right'});
+		loginButton.parentNode.insertBefore(feedButton, loginButton.nextSibling);
+		feedButton.addEventListener('click', function() {createUserFeed()});
+	}
+
+	// const profileButton = document.getElementById('profileButton');
+	// var feedButton = profileButton.cloneNode(true);	// removes event listeners
+	// feedButton.innerText = "Feed";
+	// feedButton.setAttribute("id", "feedButton");
+	// feedButton.addEventListener('click', function() {createUserFeed()})
+	// profileButton.replaceWith(feedButton);
 
 	// Username as title, userid, username, email, followers as description
 	const section = createElement('section', null, { class: 'post' });
@@ -96,7 +136,6 @@ async function userProfile() {
 
     // using list of user posts, get total no. of likes and comments.
     const posts = await getPosts(currentUser.posts);
-    console.log(posts);
     const likes = posts.map(post => post.meta.likes.length)
     	 .reduce((acc, likes) => {
     	 	acc += likes;
@@ -124,12 +163,84 @@ async function userProfile() {
 	   	section.appendChild(createElement('p', `Most liked post id: ${mostLiked.id} with ${mostLiked.meta.likes.length} likes`, {class: 'post-desc'}));
 	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
 	    section.appendChild(createViewPostTile(mostLiked));
-
    	}
-
-
-
     largeFeed.appendChild(section);
+
+}
+
+async function createUserFeed() {
+	const header = document.getElementsByClassName("banner")[0];
+	const username = document.getElementById('username');
+	const largefeed = document.getElementById('large-feed');
+	largefeed.innerHTML = "";
+
+
+	// Create follow button if it doesnt already exist (places it after username)
+	var followButton = document.getElementById('followButton');
+	if (!followButton) {
+		const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item'});
+		header.insertBefore(followButton, username.nextSibling);
+		followButton.addEventListener('click', function() {follow()});
+	}
+
+
+	// Change the feed button into a profile button if it exists, else create a profile button
+	var profileButton = document.getElementById('profileButton');
+	if (!profileButton) { 
+		var feedButton = document.getElementById('feedButton');
+		if (feedButton) {
+			// replace feedButton
+			profileButton = feedButton.cloneNode(true);	// removes past eventListeners
+			profileButton.innerText = "Profile";
+			profileButton.setAttribute("id", "profileButton");
+			profileButton.addEventListener('click', function() {createUserProfile()})
+			feedButton.replaceWith(profileButton);
+		} else {
+			// add a user profile button (to the right of the login icon)
+			const loginButton = document.getElementById('loginButton');
+			profileButton = createElement('button', "Profile", {id: 'profileButton', class: 'nav-item', style: 'float:right'});
+			loginButton.parentNode.insertBefore(profileButton, loginButton.nextSibling);
+			profileButton.addEventListener('click', function() {createUserProfile()});
+		}
+	}
+
+	// Create current user feed
+	fed = 0;
+	getFeed()
+	.then(posts => {
+		// add posts with likes/comments/time published/like button;
+		const postsArray = posts.posts;
+		console.log(postsArray);
+	    postsArray.reduce((parent, post) => {
+	        parent.appendChild(createPostTile(post));
+	        return parent;
+	    }, document.getElementById('large-feed'))
+	})
+	.then(function() {
+		// add event listeners to like buttons
+		const likeButtons = document.getElementsByClassName('likeButton');
+		for (var i = 0; i < likeButtons.length; i++) {
+			likeButtons[i].addEventListener('click', likePost);
+		}
+
+		// add event listeners to toggle show comments/likes
+		const listButtons = document.getElementsByClassName('toggleList');
+		for (var i = 0; i < listButtons.length; i++) {
+			listButtons[i].addEventListener('click', toggleList);
+		}
+
+		// add event listeners to allow comments to be made
+		const commentBoxes = document.getElementsByClassName('commentBox');
+		for (var i = 0; i < commentBoxes.length; i++) {
+			commentBoxes[i].addEventListener('keypress', function (e) {
+			    var key = e.which || e.keyCode;
+			    if (key === 13) { // 13 is enter
+			      	commentPost(e);
+			    }
+			})
+		}
+
+	});
 }
 
 // given a list of post ids, gives back an array of posts with their info
@@ -158,9 +269,7 @@ async function postImage(base64) {
 	const user = document.getElementById('username').value;
 	const token = localStorage.getItem("token");
 	const description = "not yet implemented";
-	const base64nometa = base64.substring(22, base64.length);
-	console.log(base64nometa);
-	const body = { "description_text": `${description}`, "src": `${base64nometa}` };
+	const body = { "description_text": `${description}`, "src": `${base64}` };
 	const options = {
 						method: "POST",
 						headers: 
@@ -172,6 +281,11 @@ async function postImage(base64) {
 					}
 
 	const postResult = await api.makeAPIRequest("post", options);
+	if (postResult.hasOwnProperty('post_id')) {
+		window.alert(`Successfully posted`);
+	} else {
+		window.alert(`Failed to post`);
+	}
 	console.log(postResult);
 }
 
@@ -185,6 +299,7 @@ async function getImage() {
 	const file = files[0];
     const validFileTypes = [ 'image/jpeg', 'image/png', 'image/jpg' ]
     const valid = validFileTypes.find(type => type === file.type);
+    console.log(valid);
     // bad data, let's walk away
     if (!valid)  {
     	console.log("Not jpeg, png, or jpg");
@@ -193,7 +308,11 @@ async function getImage() {
 
     const reader = new FileReader();
     reader.onload = function() {
-        postImage(reader.result);
+    	const base64 = reader.result;
+    	const base64nometa = base64.substring(valid.length+13);
+    	console.log(base64);
+		console.log(base64nometa);
+        postImage(base64nometa);
     };
     reader.readAsDataURL(file);
 
@@ -212,7 +331,12 @@ async function follow() {
 						headers: {'Authorization': `Token ${token}`},
 					}
 	const followResult = await api.makeAPIRequest(`user/follow?username=${user}`, options);
-	window.alert(followResult.message);
+	if (followResult.message != "success") {
+		window.alert(followResult.message);
+	} else {
+		window.alert(`${user} has been followed`);
+	}
+	// window.alert(followResult.message);
  
 }
 
@@ -257,82 +381,33 @@ async function login() {
 
 	if (loginResult.hasOwnProperty("token")) {
 		// login successful, got token back
-		console.log(user, "is registered with password", password);
-		const largefeed = document.getElementById('large-feed');
-		largefeed.innerHTML = "";
 		localStorage.setItem("token", loginResult.token);
-		
-		// This if statement is only activated on the first login since we remove 
-		// the name email and registerIcon fields
-		var name = document.getElementById("name");
-		var email = document.getElementById("email");
-		var registerIcon = document.getElementById("registerIcon");
-		if (name && email && registerIcon) {
-			// adding follow icon 
-			const username = document.getElementById('username');
-			var followIcon = document.createElement("li");
-			followIcon.innerText = "Follow";
-			followIcon.classList.toggle('nav-item');
-			header.insertBefore(followIcon, username.nextSibling);
-			followIcon.addEventListener('click', function() {follow()});
-			
-			// add a user profile button (to the right of the login icon)
-			const loginIcon = document.getElementById('loginIcon');
-			var profileIcon = document.createElement("div");
-			profileIcon.innerText = "Profile";
-			profileIcon.classList.toggle('nav-item');
-			profileIcon.setAttribute("id", "profileIcon");
-			profileIcon.style.float = "right";
-			header.insertBefore(profileIcon, loginIcon.nextSibling);
-			profileIcon.addEventListener('click', function() {userProfile()})
+		createUserFeed();
 
-			// removing name, email and register fields
-			header.removeChild(name);
-			header.removeChild(email);
-			header.removeChild(registerIcon);
-		}
+		// CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
+		// // This if statement is only activated on the first login since we remove 
+		// // the name email and registerIcon fields
+		// var name = document.getElementById("name");
+		// var email = document.getElementById("email");
+		// var registerIcon = document.getElementById("registerIcon");
+		// if (name && email && registerIcon) {
+		// 	// removing name, email and register fields
+		// 	header.removeChild(name);
+		// 	header.removeChild(email);
+		// 	header.removeChild(registerIcon);
+
+		// }
+		
+		console.log(`Logged in as ${user}`);
 	} else {
 		window.alert(loginResult.message);
 		return false;
 	}
 
-	// Create current user feed
-	getFeed()
-	.then(posts => {
-		// add posts with likes/comments/time published/like button;
-		const postsArray = posts.posts;
-		console.log(postsArray);
-	    postsArray.reduce((parent, post) => {
-	        parent.appendChild(createPostTile(post));
-	        return parent;
-	    }, document.getElementById('large-feed'))
-	})
-	.then(function() {
-		// add event listeners to like buttons
-		const likeButtons = document.getElementsByClassName('likeButton');
-		for (var i = 0; i < likeButtons.length; i++) {
-			likeButtons[i].addEventListener('click', likePost);
-		}
 
-		// add event listeners to show each individual who liked the post
-		const listButtons = document.getElementsByClassName('toggleList');
-		for (var i = 0; i < listButtons.length; i++) {
-			listButtons[i].addEventListener('click', toggleList);
-		}
-
-		// add event listeners to show each individual that commented on the post
-		const commentBoxes = document.getElementsByClassName('commentBox');
-		for (var i = 0; i < commentBoxes.length; i++) {
-			commentBoxes[i].addEventListener('keypress', function (e) {
-			    var key = e.which || e.keyCode;
-			    if (key === 13) { // 13 is enter
-			      	commentPost(e);
-			    }
-			})
-		}
-
-	});
 }
+
+
 
 
 // Pressing enter on a commentbox comments on that post as the logged in user 
@@ -364,7 +439,7 @@ async function commentPost(event) {
 	const commentList = commentNode.getElementsByClassName('list')[0];
 	commentList.appendChild(createElement('li', `${username}: ${comment}`, {class:"comment"}));
 
-	window.alert(`Comment status: ${commentResult.message}`);
+	window.alert(`Comment ${commentResult.message}`);
 }
 
 // Clicking on the arrow next to lists will toggle the hidden status of the list and 
@@ -383,7 +458,7 @@ function toggleList(event) {
 
 
 // Likes the post as the logged in user (only available when logged in)
-function likePost(event) {
+async function likePost(event) {
 	const token = localStorage.getItem("token");
 	const id = event.target.parentNode.id;
 	const options = {
@@ -394,7 +469,12 @@ function likePost(event) {
 									"Content-Type": "application/json"
 								},
 					}
-	const likeResult = api.makeAPIRequest(`post/like?id=${id}`, options);
+	const likeResult = await api.makeAPIRequest(`post/like?id=${id}`, options);
+	if (likeResult.message != "success") {
+		window.alert(likeResult.message);
+	} else {
+		window.alert(`Post has been liked`);
+	}
 }
 
 
@@ -409,7 +489,8 @@ async function getFeed() {
 									"Content-Type": "application/json"
 								},
 					}
-	const feedResult = await api.makeAPIRequest("user/feed", options);
+	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=3`, options);
+	fed += 3;
 	return feedResult;
 }
 
@@ -428,6 +509,7 @@ async function getCurrentUser() {
 	return currentUser;
 }
 
+var fed = 0;
 homePage();
 
 

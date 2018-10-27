@@ -69,7 +69,7 @@ async function homePage() {
 		});
 	} else {
 		createUserFeed();
-		window.alert(`Logged in as ${currentUser.username}`);
+		//window.alert(`Logged in as ${currentUser.username}`);
 	}
 };
 
@@ -230,58 +230,93 @@ async function createUserFeed() {
 
 	// Create current user feed
 	fed = 0;
-	getFeed()
-	.then(posts => {
-		// add posts with likes/comments/time published/like button;
-		const postsArray = posts.posts;
-		console.log(postsArray);
-	    postsArray.reduce((parent, post) => {
-	        parent.appendChild(createPostTile(post));
-	        return parent;
-	    }, document.getElementById('large-feed'))
-	})
-	.then(function() {
-		// add event listeners to like buttons
-		const likeButtons = document.getElementsByClassName('likeButton');
-		for (var i = 0; i < likeButtons.length; i++) {
-			likeButtons[i].addEventListener('click', likePost);
-		}
+	// getFeed()
+	// .then(posts => {
+	// 	// add posts with likes/comments/time published/like button;
+	// 	const postsArray = posts.posts;
+	// 	console.log(postsArray);
+	//     postsArray.reduce((parent, post) => {
+	//         parent.appendChild(createPostTile(post));
+	//         return parent;
+	//     }, document.getElementById('large-feed'))
+	// })
+	// .then(function() {
+	// 	// add event listeners to like buttons
+	// 	const likeButtons = document.getElementsByClassName('likeButton');
+	// 	for (var i = 0; i < likeButtons.length; i++) {
+	// 		likeButtons[i].addEventListener('click', likePost);
+	// 	}
 
-		// add event listeners to toggle show comments/likes
-		const listButtons = document.getElementsByClassName('toggleList');
-		for (var i = 0; i < listButtons.length; i++) {
-			listButtons[i].addEventListener('click', toggleList);
-		}
+	// 	// add event listeners to toggle show comments/likes
+	// 	const listButtons = document.getElementsByClassName('toggleList');
+	// 	for (var i = 0; i < listButtons.length; i++) {
+	// 		listButtons[i].addEventListener('click', toggleList);
+	// 	}
 
-		// add event listeners to allow comments to be made
-		const commentBoxes = document.getElementsByClassName('commentBox');
-		for (var i = 0; i < commentBoxes.length; i++) {
-			commentBoxes[i].addEventListener('keypress', function (e) {
-			    var key = e.which || e.keyCode;
-			    if (key === 13) { // 13 is enter
-			      	commentPost(e);
-			    }
-			})
-		}
-	});
+	// 	// add event listeners to allow comments to be made
+	// 	const commentBoxes = document.getElementsByClassName('commentBox');
+	// 	for (var i = 0; i < commentBoxes.length; i++) {
+	// 		commentBoxes[i].addEventListener('keypress', function (e) {
+	// 		    var key = e.which || e.keyCode;
+	// 		    if (key === 13) { // 13 is enter
+	// 		      	commentPost(e);
+	// 		    }
+	// 		})
+	// 	}
+	// });
 
-	document.addEventListener("scroll", function (event) {
-    	checkForNewDiv();
-	});
-
-	var checkForNewDiv = function () {
+	var infiniteScroll = async function () {
 	    var lastDiv = document.getElementsByTagName("footer")[0];
 	    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
 	    var pageOffset = window.pageYOffset + window.innerHeight;
 
-	    if (pageOffset > lastDivOffset - 10) {
-	        var newDiv = document.createElement("div");
-	        newDiv.innerHTML = "my awesome new div";
-	        lastDiv.appendChild(newDiv);
-	        //document.getElementById("scroll-content").appendChild(newDiv);
-	        checkForNewDiv();
+	    if (pageOffset > lastDivOffset - 20) {
+	    	await getFeed().then(feed => feed.posts)
+	    	.then(posts => posts[0])
+	    	.then(post => {
+	    		const postElement = createPostTile(post);
+	    		largefeed.appendChild(postElement);
+	    		
+	    		// add event listeners to like buttons
+				const likeButtons = postElement.getElementsByClassName('likeButton')[0];
+				for (var i = 0; i < likeButtons.length; i++) {
+					likeButtons[i].addEventListener('click', likePost);
+				}
+
+				// add event listeners to toggle show comments/likes
+				const listButtons = postElement.getElementsByClassName('toggleList')[0];
+				for (var i = 0; i < listButtons.length; i++) {
+					listButtons[i].addEventListener('click', toggleList);
+				}
+
+				// add event listeners to allow comments to be made
+				const commentBoxes = postElement.getElementsByClassName('commentBox')[0];
+				for (var i = 0; i < commentBoxes.length; i++) {
+					commentBoxes[i].addEventListener('keypress', function (e) {
+					    var key = e.which || e.keyCode;
+					    if (key === 13) { // 13 is enter
+					      	commentPost(e);
+					    }
+					})
+				}
+
+	    	});
+	        // var newDiv = document.createElement("div");
+	        // newDiv.innerHTML = "my awesome new div";
+	        // lastDiv.appendChild(newDiv);
+	        setTimeout(infiniteScroll, 100);
 	    }
 	};
+
+	var timer;
+	document.addEventListener("scroll", function (event) {
+		if (timer) {
+			clearTimeout(timer);
+		}
+    	timer = setTimeout(infiniteScroll, 100);
+	});
+
+	infiniteScroll();
 }
 
 // given a list of post ids, gives back an array of posts with their info
@@ -486,8 +521,8 @@ async function getFeed() {
 									"Content-Type": "application/json"
 								},
 					}
-	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=3`, options);
-	fed += 3;
+	fed += 1;
+	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=1`, options);
 	return feedResult;
 }
 

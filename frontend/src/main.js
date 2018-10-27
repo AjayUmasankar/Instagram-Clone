@@ -7,54 +7,63 @@ import API from './api.js';
 const api  = new API();
 
 
-// Username is registered with password password
-// greg username, greg password
-// Username follows greg
+var fed = 0;
+const header = document.getElementsByClassName("banner")[0];
+header.style.display = 'table-cell';
 
+// allows files to be uploaded via post button
+var postButton = document.getElementsByClassName("nav-item")[1];
+postButton.innerText = "Post";
+const input = document.querySelector('input[type="file"]');
+postButton.addEventListener('click', function() {getImage()});
 
-// Constructs home page
-async function homePage() {
-	const header = document.getElementsByClassName("banner")[0];
-	// removing 'flex' attribute for header and making it a table-cell
-	header.style.display = 'table-cell';
+// username text box
+const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'Username'});
+header.appendChild(username);
+// follow button (hidden until login)
+const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item', style: 'display:none'});
+header.appendChild(followButton);
+// password text box
+const password = createElement('INPUT', "", {type: 'text', id: 'password', value: 'password'});
+header.appendChild(password);
+// login icon
+const loginButton = createElement('button', "Login", {id: 'loginButton', class: 'nav-item'});
+header.appendChild(loginButton);
+// feed button (hidden until login)
+const feedButton = createElement('button', "Feed", {id: 'feedButton', class: 'nav-item', style: 'float:right; visibility:hidden'});
+header.appendChild(feedButton);
+// user profile button (hidden until login)
+const profileButton = createElement('button', "Profile", {id: 'profileButton', class: 'nav-item', style: 'float:right; visibility:hidden'});
+header.appendChild(profileButton);
+// new line
+header.appendChild(document.createElement("br"));
+// name text box
+const name = createElement('INPUT', "", {type: 'text', id: 'name', value: 'name'});
+header.appendChild(name);
+// email text box
+const email = createElement('INPUT', "", {type: 'text', id: 'email', value: 'email'});
+header.appendChild(email);
+// signup icon
+const registerButton = createElement('button', "Register", {id: 'registerButton', class: 'nav-item'});
+header.appendChild(registerButton);
+// update profile icon
+const updateButton = createElement('button', "Update Info", {id: 'updateButton', class: 'nav-item', style: 'float:right; visibility:hidden'});
+header.appendChild(updateButton);
 
-	// allows files to be uploaded via post button
-	var postButton = document.getElementsByClassName("nav-item")[1];
-	postButton.innerText = "Post";
-	const input = document.querySelector('input[type="file"]');
-	//input.addEventListener('change', uploadImage);
-	postButton.addEventListener('click', function() {getImage()});
+// add event listeners for profile feed and follow buttons
+feedButton.addEventListener('click', function() {createUserFeed()});
+profileButton.addEventListener('click', function() {createUserProfile()})
+followButton.addEventListener('click', function() {follow()});
+updateButton.addEventListener('click', function() {updateUser()})
+// Adding event listeners to login/signup
+loginButton.addEventListener('click', function() {login()});
+registerButton.addEventListener('click', function() {signup()});
+startingPage();
 
-
-	// username text box
-	const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'Username'});
-	header.appendChild(username);
-	// password text box
-	const password = createElement('INPUT', "", {type: 'text', id: 'password', value: 'password'});
-	header.appendChild(password);
-	// login icon
-	const loginButton = createElement('button', "Login", {id: 'loginButton', class: 'nav-item'});
-	header.appendChild(loginButton);
-	// new line
-	header.appendChild(document.createElement("br"));
-	// name text box
-	const name = createElement('INPUT', "", {type: 'text', id: 'name', value: 'name'});
-	header.appendChild(name);
-	// email text box
-	const email = createElement('INPUT', "", {type: 'text', id: 'email', value: 'email'});
-	header.appendChild(email);
-	// signup icon
-	const registerIcon = createElement('button', "Register", {id: 'registerIcon', class: 'nav-item'});
-	header.appendChild(registerIcon);
-
-
-	// Adding functions to login/signup
-	loginButton.addEventListener('click', function() {login()});
-	registerIcon.addEventListener('click', function() {signup()});
-
-
+// Creates a static feed from subset0 data if no valid localstorage token
+// else creates a page with requested info depending on URL
+async function startingPage() {
 	const currentUser = await getCurrentUser();
-	// Checking if there is a valid localStorage token already
 	if (!currentUser.hasOwnProperty('id')) {
 		// create a basic static feed
 		const largeFeed = document.getElementById('large-feed');
@@ -70,23 +79,42 @@ async function homePage() {
 	} else {
 		loginSetup(); 
 		createUserFeed();
-		//window.alert(`Logged in as ${currentUser.username}`);
 	}
-};
+}
+
+// Updates current user's details with contents of name, password and email text boxes
+async function updateUser() {
+	const token = localStorage.getItem("token");
+	var body = { "email": email.value, "name": name.value, "password": password.value };
+	var options =   {
+					    headers: 
+							{
+								'Authorization': `Token ${token}`, 
+								"Content-Type": "application/json"
+							},
+					    method: "PUT",
+					    body: JSON.stringify(body),
+					}
+
+	const updateResult = await api.makeAPIRequest("user", options);
+	console.log(updateResult);
+	if (updateResult.msg == "success") {
+		window.alert(`User details updated`);
+	} else {
+		window.alert(updateResult.msg);
+	}
+}
+
 
 // adds functions that are only available to a logged in user (either via local stored 
 // token or manually clicking login)
 async function loginSetup() {
-	// Create follow button if it doesnt already exist (places it after username)
-	var followButton = document.getElementById('followButton');
-	const header = document.getElementsByClassName("banner")[0];
-	const username = document.getElementById('username');
-
-	if (!followButton) {
-		const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item'});
-		header.insertBefore(followButton, username.nextSibling);
-		followButton.addEventListener('click', function() {follow()});
-	}
+	// note: can either set style.display value or style.visibility
+	// style.display makes the hidden element take up no space
+	followButton.style = '';
+	feedButton.style.visibility = 'visible';
+	profileButton.style.visibility = 'visible';
+	updateButton.style.visibility = 'visible';
 }
 
 // Uses the username and password fields to attempt to login
@@ -126,24 +154,6 @@ async function createUserProfile() {
 	console.log(currentUser);
 	const largeFeed = document.getElementById('large-feed');
 	largeFeed.innerHTML = "";
-
-	// Change the profile button to a new button that goes back to the users feed
-	var profileButton = document.getElementById('profileButton');
-	var feedButton;
-	if (profileButton) {
-		// replace profileButton
-		feedButton = profileButton.cloneNode(true);	// removes past eventListeners
-		feedButton.innerText = "Feed";
-		feedButton.setAttribute("id", "feedButton");
-		profileButton.replaceWith(feedButton);
-	} else {
-		// add a user profile button (to the right of the login icon)
-		const loginButton = document.getElementById('loginButton');
-		feedButton = createElement('button', "Feed", {id: 'feedButton', class: 'nav-item', style: 'float:right'});
-		loginButton.parentNode.insertBefore(feedButton, loginButton.nextSibling);
-	}
-
-
 
 	// Username as title, userid, username, email, followers as description
 	const section = createElement('section', null, { class: 'post' });
@@ -194,8 +204,6 @@ async function createUserProfile() {
 	    section.appendChild(createViewPostTile(mostLiked));
    	}
     largeFeed.appendChild(section);
-    // add event listener to go back to feed after profile is properly created
-    feedButton.addEventListener('click', function() {createUserFeed()});
 
 }
 
@@ -208,45 +216,21 @@ async function createUserFeed() {
 
 	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
 	// // This if statement is only activated on the first login since we remove 
-	// // the name email and registerIcon fields
+	// // the name email and registerButton fields
 	// var name = document.getElementById("name");
 	// var email = document.getElementById("email");
-	// var registerIcon = document.getElementById("registerIcon");
-	// if (name && email && registerIcon) {
+	// var registerButton = document.getElementById("registerButton");
+	// if (name && email && registerButton) {
 	// 	// removing name, email and register fields
 	// 	header.removeChild(name);
 	// 	header.removeChild(email);
-	// 	header.removeChild(registerIcon);
+	// 	header.removeChild(registerButton);
 	// }
-
-
-
-
-
-	// Change the feed button into a profile button if it exists, else create a profile button
-	// var profileButton = document.getElementById('profileButton');
-	// if (!profileButton) { 
-	var feedButton = document.getElementById('feedButton');
-	var profileButton;
-	if (feedButton) {
-		// replace feedButton
-		profileButton = feedButton.cloneNode(true);	// removes past eventListeners
-		profileButton.innerText = "Profile";
-		profileButton.setAttribute("id", "profileButton");
-		feedButton.replaceWith(profileButton);
-	} else {
-		// add a user profile button (to the right of the login icon)
-		const loginButton = document.getElementById('loginButton');
-		profileButton = createElement('button', "Profile", {id: 'profileButton', class: 'nav-item', style: 'float:right'});
-		loginButton.parentNode.insertBefore(profileButton, loginButton.nextSibling);
-	}
-	
 
 	// Create current user feed
 	document.addEventListener("scroll", delayGetNextPost);
 	await getNextPost();
-	// add event listener to go back to profile after basic feed is made
-	profileButton.addEventListener('click', function() {createUserProfile()})
+
 }
 
 // This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
@@ -408,7 +392,7 @@ async function signup() {
 					}
 
 	const signupResult = await api.makeAPIRequest("auth/signup", options);
-	console.log(signupResult);
+	//console.log(signupResult);
 	if (signupResult.hasOwnProperty("token")) {
 		window.alert(`Signup successful`);
 	} else {
@@ -517,67 +501,3 @@ async function getCurrentUser() {
 	const currentUser = await api.makeAPIRequest("user", options);
 	return currentUser;
 }
-
-var fed = 0;
-homePage();
-
-
- //    var promises = [];
-
-	// for(i=0;i<5;i+){
-	//     promises.push(doSomeAsyncStuff());
-	// }
-
-	// Promise.all(promises)
- //    .then(() => {
- //        for(i=0;i<5;i++){
- //            doSomeStuffOnlyWhenTheAsyncStuffIsFinish();    
- //        }
- //    })
- //    .catch((e) => {
- //        // handle errors here
- //    });
-
-
- 	// const profileButton = document.getElementById('profileButton');
-	// var feedButton = profileButton.cloneNode(true);	// removes event listeners
-	// feedButton.innerText = "Feed";
-	// feedButton.setAttribute("id", "feedButton");
-	// feedButton.addEventListener('click', function() {createUserFeed()})
-	// profileButton.replaceWith(feedButton);
-
-
-		// getFeed()
-	// .then(posts => {
-	// 	// add posts with likes/comments/time published/like button;
-	// 	const postsArray = posts.posts;
-	// 	console.log(postsArray);
-	//     postsArray.reduce((parent, post) => {
-	//         parent.appendChild(createPostTile(post));
-	//         return parent;
-	//     }, document.getElementById('large-feed'))
-	// })
-	// .then(function() {
-	// 	// add event listeners to like buttons
-	// 	const likeButtons = document.getElementsByClassName('likeButton');
-	// 	for (var i = 0; i < likeButtons.length; i++) {
-	// 		likeButtons[i].addEventListener('click', likePost);
-	// 	}
-
-	// 	// add event listeners to toggle show comments/likes
-	// 	const listButtons = document.getElementsByClassName('toggleList');
-	// 	for (var i = 0; i < listButtons.length; i++) {
-	// 		listButtons[i].addEventListener('click', toggleList);
-	// 	}
-
-	// 	// add event listeners to allow comments to be made
-	// 	const commentBoxes = document.getElementsByClassName('commentBox');
-	// 	for (var i = 0; i < commentBoxes.length; i++) {
-	// 		commentBoxes[i].addEventListener('keypress', function (e) {
-	// 		    var key = e.which || e.keyCode;
-	// 		    if (key === 13) { // 13 is enter
-	// 		      	commentPost(e);
-	// 		    }
-	// 		})
-	// 	}
-	// });

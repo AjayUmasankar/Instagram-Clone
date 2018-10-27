@@ -64,7 +64,9 @@ startingPage();
 // else creates a page with requested info depending on URL
 async function startingPage() {
 	const currentUser = await getCurrentUser();
-	if (!currentUser.hasOwnProperty('id')) {
+	const fragment = window.location.hash;
+
+	if (fragment == "") {
 		// create a basic static feed
 		const largeFeed = document.getElementById('large-feed');
 		largeFeed.innerHTML = "";
@@ -76,10 +78,23 @@ async function startingPage() {
 		        return parent;
 		    }, largeFeed)
 		});
-	} else {
-		loginSetup(); 
+		return;
+	} 
+	// previous token used to login user
+	loginSetup();
+	if (fragment == "#profile=me") {
+		createUserProfile();
+	} else if (fragment == "#feed") {
 		createUserFeed();
+	} else if (fragment.startsWith("#profile=")) {
+		const targetUser = fragment.substring(9);
+		createUserPage(targetUser);
 	}
+}
+
+async function createUserPage(user) {
+	console.log(user);
+	console.log(await getUserByName(user));
 }
 
 // Updates current user's details with contents of name, password and email text boxes
@@ -111,6 +126,7 @@ async function updateUser() {
 async function loginSetup() {
 	// note: can either set style.display value or style.visibility
 	// style.display makes the hidden element take up no space
+	loginButton.style.display = 'none';
 	followButton.style = '';
 	feedButton.style.visibility = 'visible';
 	profileButton.style.visibility = 'visible';
@@ -487,6 +503,20 @@ async function getFeed() {
 	return feedResult;
 }
 
+async function getUserByName(username) {
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "GET",
+						headers: 
+								{
+									'Authorization': `Token ${token}`,
+									"Content-Type": "application/json"
+								},
+					}
+	const user = await api.makeAPIRequest(`user/?username=${username}`, options);
+	return user;
+}
+
 // Gets current user details
 async function getCurrentUser() {
 	const token = localStorage.getItem("token");
@@ -499,5 +529,6 @@ async function getCurrentUser() {
 								},
 					}
 	const currentUser = await api.makeAPIRequest("user", options);
+	//const currentUser = getUser(token, "", "");
 	return currentUser;
 }

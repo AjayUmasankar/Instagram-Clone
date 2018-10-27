@@ -22,3 +22,6 @@ are no example posts and users as of yet)
 27/10/18	10pm - 11.30pm	Implemented infinite scroll (https://stackoverflow.com/questions/22268079/how-to-do-infinite-scrolling-with-javascript-only-without-jquery), based off of this small piece of code by 'webpapaya'
 Bugfixes for infinite scroll
 
+28/10/18	12am - 1.15am 		Can update user profile now + refactored code to make it neater and have less duplicated code. Refactored code made it easier to also implement fragment based url routing which is functional except for user pages (not implemented)
+
+

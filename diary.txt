@@ -27,3 +27,5 @@ Bugfixes for infinite scroll
 28/10/18	1.30am - 2.30am 	User pages implemented via url fragmentation
 
 28/10/18	4.25pm - 4.35pm		Finished up user pages, can click on a post's title to go to that posters userpage
+
+28/10/18	6pm-10.30pm			Added push notifications, deleting of posts, finished fragmeted urls, live update for comments + likes fixed. bug fixes + testing

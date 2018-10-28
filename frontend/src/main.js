@@ -1,5 +1,5 @@
 // importing named exports we use brackets
-import { createPostTile, createStaticPostTile, createViewPostTile, uploadImage, createElement } from './helpers.js';
+import { createStaticPostTile, createViewPostTile, uploadImage, createElement } from './helpers.js';
 
 
 // talk about live comments, infinite scroll, user pages/profiles, url fragmentation
@@ -241,19 +241,14 @@ async function createUserPage(user) {
 		// essentially creates a feed but with a delete button for posts
 		const post = await getPost(posts[i]);
 		const postElement = createPostTile(post);
-		// const likeButton = postElement.getElementsByClassName('likeButton')[0];
-		// const deleteButton = createElement('li', "Click to Delete", {class: "nav-item deleteButton"});
-		// likeButton.parentNode.insertBefore(deleteButton, likeButton.nextSibling);
+		const likeButton = postElement.getElementsByClassName('likeButton')[0];
+		const deleteButton = createElement('li', "Click to Delete", {class: "nav-item deleteButton", style: 'cursor:pointer'});
+		likeButton.parentNode.insertBefore(deleteButton, likeButton.nextSibling);
 		largefeed.appendChild(postElement);
 		addPostEventListeners(postElement);
 	}
 }
 
-// // combines createPostTile and addding event listeners to a post tile
-// // takes in a post (GET /POST/)
-// function createPost(post) {
-
-// }
 
 // This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
 // only once when nearing the end of the page.
@@ -280,9 +275,9 @@ async function getNextPost() {
     			return;
     		}
     		const postElement = createPostTile(post);
-    		const likeList = postElement.getElementsByClassName('list')[0];
+    		//const likeList = postElement.getElementsByClassName('list')[0];
 
-    		
+  
     		//user.following.map(userID => 
    			// 	{
      		// 	const username = getUserById(userID)
@@ -307,14 +302,14 @@ async function getNextPost() {
  * @param   {object}        post 
  * @returns {HTMLElement}
  */
-export function createPostTile(post) {
+function createPostTile(post) {
     if (!post || !post.hasOwnProperty('id')) {
         console.log(`No more new posts to create`);
         return false;
     }
     var section = createElement('section', null, { class: 'post', id:post.id });
     // who the post was made by
-    section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
+    section.appendChild(createElement('h2', post.meta.author, { class: 'post-title', style: 'cursor: pointer'}));
 
     // The post description text
     section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
@@ -324,10 +319,8 @@ export function createPostTile(post) {
         { src: 'data:image/png;base64,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
   
     // Like button
-    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton"}));// follow icon
+    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton", style: 'cursor:pointer'}));// follow icon
     
-
-  	
 
     // Number of likes/who liked this post
     const likeElement = createElement('p', `Likes`, {class: 'post-desc'});
@@ -353,15 +346,15 @@ export function createPostTile(post) {
         const author = comment.author;
         const published = comment.published;
         const authorComment = comment.comment;
-        list.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
+        commentList.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
     });
     commentElement.appendChild(toggleList);
     commentElement.appendChild(createElement('br', null));
-    commentElement.appendChild(list);
+    commentElement.appendChild(commentList);
     // comment text box
     const comment = createElement('INPUT', "", {type: 'text', class: 'commentBox', value: 'comment'});
     commentElement.appendChild(comment);
-    list.hidden = false;
+    commentList.hidden = false;
     section.appendChild(commentElement);
 
     // when it was posted
@@ -495,10 +488,10 @@ async function loginSetup() {
 	nav.style.display = ''
 	followButton.style.display = '';
 	loginButton.style.display = 'none';
-	name.style.display = 'none';
-	email.style.display = 'none';
+	//name.style.display = 'none';
+	//email.style.display = 'none';
 	registerButton.style.display = 'none';
-	password.style.display = 'none';
+	//password.style.display = 'none';
 
 	getCurrentFeed(0)
 	.then(feed => feed.posts[0])
@@ -783,7 +776,10 @@ async function getUserByUsernameString(usernameString) {
 								},
 					}
 	const user = await api.makeAPIRequest(`user/?username=${usernameString}`, options);
-	console.log(user);
+	if (!user.hasOwnProperty('id')) {
+		console.log(user);
+		window.alert(`Please login first`);
+	}
 	return user;
 }
 
@@ -818,12 +814,3 @@ async function getUserById(id) {
 	return user;
 }
 
-
-
-//const postButton = createElement<li class="nav-item"><input type="file"/></li>
-//const fileInput = createElement('input', "", {type: 'file', id: 'fileInput', class: "nav-item"});
-// const postButton = createElement('button', "Post", {type: 'file', id: 'postButton', class: "nav-item"});
-// nav.appendChild(postButton);
-//const description = createElement('INPUT', "", {type: 'text', id: 'description', value: 'description'});
-// const input = document.querySelector('input[type="file"]');
-// header.insertBefore(description, postButton.nextSibling);

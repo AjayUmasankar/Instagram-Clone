@@ -421,7 +421,7 @@ function addPostEventListeners(postElement){
 	// add event listener to delete button
 	const deleteButton = postElement.getElementsByClassName('deleteButton')[0];
 	if (deleteButton) { 
-		deleteButton.addEventListener('click', function(event) {deletePost(event)});
+		deleteButton.addEventListener('click', deletePost);
 	}
 	// add event listeners to toggle show comments/likes
 	const listButtons = postElement.getElementsByClassName('toggleList');
@@ -443,7 +443,7 @@ function addPostEventListeners(postElement){
 	title.addEventListener('click', function() {getUserPage()});
 }
 
-async function getUserPage() {
+async function getUserPage(event) {
 	const postElement = event.target;
 	createUserPage(await getUserByUsernameString(postElement.innerText));	//innerText is the username of the poster
 }

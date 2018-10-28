@@ -17,15 +17,15 @@ const largefeed = document.getElementById('large-feed');
 const header = document.getElementsByClassName("banner")[0];
 header.style.display = 'table-cell';
 
-// creates a file uploader element and adds a post button
+// creates a file uploader element and adds an event listener to the post button
+const nav = document.getElementsByClassName('nav')[0];
 const nav_item = document.getElementsByClassName('nav-item')[0];
 const fileInput = createElement('input', "", {type: 'file', id: 'fileInput'});
 nav_item.appendChild(fileInput);
+nav.style.display = 'none'
+
+// postButton
 var postButton = document.getElementsByClassName("nav-item")[1];
-postButton.innerText = "Post";
-postButton.addEventListener('click', function() {getImage()});
-
-
 // username text box
 const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'username'});
 header.appendChild(username);
@@ -59,11 +59,13 @@ header.appendChild(registerButton);
 const updateButton = createElement('button', "Update Info", {id: 'updateButton', class: 'nav-item', style: 'float:right; visibility:hidden'});
 header.appendChild(updateButton);
 
-// add event listeners for profile feed and follow buttons
+// add event listeners for profile feed follow 
 feedButton.addEventListener('click', function() {createUserFeed()});
 profileButton.addEventListener('click', async function() {createUserProfile(await getCurrentUser())})
 followButton.addEventListener('click', function() {follow()});
+// update profile and post buttons
 updateButton.addEventListener('click', function() {updateUser()})
+postButton.addEventListener('click', function() {getImage()});
 // Adding event listeners to login/signup
 loginButton.addEventListener('click', function() {login()});
 registerButton.addEventListener('click', function() {signup()});
@@ -91,15 +93,16 @@ async function startingPage() {
 	} 
 
 	// previous token used to login user
-	if (fragment == "#profile=me") {
-		loginSetup();
-		createUserProfile(await getCurrentUser());
-	} else if (fragment == "#feed") {
-		loginSetup();
-		createUserFeed();
-	} else if (fragment.startsWith("#profile=")) {
+	if (fragment != "#profile=me" && fragment.startsWith("#profile=")) {
 		const targetUser = fragment.substring(9);
 		createUserPage(targetUser);
+	} else {
+		loginSetup();
+		if (fragment == "#profile=me") {
+			createUserProfile(await getCurrentUser());
+		} else if (fragment == "#feed") {
+			createUserFeed();
+		}
 	}
 }
 
@@ -323,10 +326,12 @@ async function loginSetup() {
 	// note: can either set style.display value or style.visibility
 	// style.display makes the hidden element take up no space
 	loginButton.style.display = 'none';
-	followButton.style = '';
 	feedButton.style.visibility = 'visible';
 	profileButton.style.visibility = 'visible';
 	updateButton.style.visibility = 'visible';
+	nav.style.display = ''
+	followButton.style.display = '';
+
 }
 
 // Uses the username and password fields to attempt to login

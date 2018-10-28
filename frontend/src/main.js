@@ -17,15 +17,14 @@ const largefeed = document.getElementById('large-feed');
 const header = document.getElementsByClassName("banner")[0];
 header.style.display = 'table-cell';
 
-// allows files to be uploaded via post button
-            //<li class="nav-item"><input type="file"/></li>
-
+// creates a file uploader element and adds a post button
+const nav_item = document.getElementsByClassName('nav-item')[0];
+const fileInput = createElement('input', "", {type: 'file', id: 'fileInput'});
+nav_item.appendChild(fileInput);
 var postButton = document.getElementsByClassName("nav-item")[1];
 postButton.innerText = "Post";
-const input = document.querySelector('input[type="file"]');
 postButton.addEventListener('click', function() {getImage()});
-const description = createElement('INPUT', "", {type: 'text', id: 'description', value: 'description'});
-header.insertBefore(description, postButton.nextSibling);
+
 
 // username text box
 const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'username'});
@@ -411,7 +410,8 @@ async function postImage(base64) {
 
 // Gets an uploaded image if there is one, else returns false
 async function getImage() {
-	const files = document.getElementsByTagName("input")[0].files;
+	const files = document.getElementById("fileInput").files;
+	console.log(files);
 	if (files.length < 1) {
 		console.log("No files");
 		return false;
@@ -597,7 +597,16 @@ async function getCurrentFeed() {
 									"Content-Type": "application/json"
 								},
 					}
-	fed += 1;
 	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=1`, options);
+	fed += 1;
 	return feedResult;
 }
+
+
+//const postButton = createElement<li class="nav-item"><input type="file"/></li>
+//const fileInput = createElement('input', "", {type: 'file', id: 'fileInput', class: "nav-item"});
+// const postButton = createElement('button', "Post", {type: 'file', id: 'postButton', class: "nav-item"});
+// nav.appendChild(postButton);
+//const description = createElement('INPUT', "", {type: 'text', id: 'description', value: 'description'});
+// const input = document.querySelector('input[type="file"]');
+// header.insertBefore(description, postButton.nextSibling);

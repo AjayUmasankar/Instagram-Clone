@@ -37,7 +37,7 @@ export function createElement(tag, data, options = {}) {
 export function createPostTile(post) {
     var section = createElement('section', null, { class: 'post', id:post.id });
     // who the post was made by
-    section.appendChild(createElement('button', post.meta.author, { class: 'post-title' }));
+    section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
 
     // The post description text
     section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));

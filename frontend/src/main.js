@@ -1,6 +1,11 @@
 // importing named exports we use brackets
 import { createPostTile, createStaticPostTile, createViewPostTile, uploadImage, createElement } from './helpers.js';
 
+
+// talk about live comments, infinite scroll, user pages/profiles, url fragmentation
+// rock rock, food food, username password
+
+
 // when importing 'default' exports, use below syntax
 import API from './api.js';
 
@@ -13,13 +18,17 @@ const header = document.getElementsByClassName("banner")[0];
 header.style.display = 'table-cell';
 
 // allows files to be uploaded via post button
+            //<li class="nav-item"><input type="file"/></li>
+
 var postButton = document.getElementsByClassName("nav-item")[1];
 postButton.innerText = "Post";
 const input = document.querySelector('input[type="file"]');
 postButton.addEventListener('click', function() {getImage()});
+const description = createElement('INPUT', "", {type: 'text', id: 'description', value: 'description'});
+header.insertBefore(description, postButton.nextSibling);
 
 // username text box
-const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'Username'});
+const username = createElement('INPUT', "", {type: 'text', id: 'username', value: 'username'});
 header.appendChild(username);
 // follow button (hidden until login)
 const followButton = createElement('button', "Follow", {id: 'followButton', class: 'nav-item', style: 'display:none'});
@@ -95,20 +104,8 @@ async function startingPage() {
 	}
 }
 
-async function createUserPage(user) {
-	//console.log(user);
-	const userDetails = await getUserByName(user);
-	createUserProfile(userDetails);
-	const posts = userDetails.posts;
-	for (var i = posts.length-1; i >= 0 ; i--) {
-		const postElement = await getPost(posts[i]);
-		//console.log(postElement);
-		largefeed.appendChild(createPostTile(postElement));
-	}
-	// Create current user feed
-	//console.log(userDetails);
-}
 
+// Fetches the post with id id
 async function getPost(id) {
 	const token = localStorage.getItem("token");
 	const options = {
@@ -129,77 +126,6 @@ async function getPost(id) {
 }
 
 
-// This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
-// only once when nearing the end of the page.
-var timer;
-function delayGetNextPost() {
-	if (timer) {
-		clearTimeout(timer);
-	}
-	timer = setTimeout(getNextPost, 100);
-}
-
-async function getNextPost() {
-    var lastDiv = document.getElementsByTagName("footer")[0];
-    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
-    var pageOffset = window.pageYOffset + window.innerHeight;
-
-    if (pageOffset > lastDivOffset - 20) {
-    	await getCurrentFeed().then(feed => feed.posts)
-    	.then(posts => posts[0])
-    	.then(post => {
-    		const postElement = createPostTile(post);
-    		largefeed.appendChild(postElement);
-    		//addPostEventListeners(post);
-    		// add event listeners to like buttons
-			const likeButton = postElement.getElementsByClassName('likeButton')[0];
-			likeButton.addEventListener('click', likePost);
-
-			// add event listeners to toggle show comments/likes
-			const listButton = postElement.getElementsByClassName('toggleList')[0];
-			listButton.addEventListener('click', toggleList);
-
-			// add event listeners to allow comments to be made
-			const commentBox = postElement.getElementsByClassName('commentBox')[0];
-			commentBox.addEventListener('keypress', function (e) {
-			    var key = e.which || e.keyCode;
-			    if (key === 13) { // 13 is enter
-			      	commentPost(e);
-			    }
-			})
-    	});
-        // var newDiv = document.createElement("div");
-        // newDiv.innerHTML = "my awesome new div";
-        // lastDiv.appendChild(newDiv);
-        setTimeout(getNextPost, 100);
-    }
-};
-
-// Gets the current user's feed (via local storage auth token)
-async function createUserFeed() {
-	const header = document.getElementsByClassName("banner")[0];
-	const username = document.getElementById('username');
-	const largefeed = document.getElementById('large-feed');
-	largefeed.innerHTML = "";
-	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
-
-	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
-	// // This if statement is only activated on the first login since we remove 
-	// // the name email and registerButton fields
-	// var name = document.getElementById("name");
-	// var email = document.getElementById("email");
-	// var registerButton = document.getElementById("registerButton");
-	// if (name && email && registerButton) {
-	// 	// removing name, email and register fields
-	// 	header.removeChild(name);
-	// 	header.removeChild(email);
-	// 	header.removeChild(registerButton);
-	// }
-
-	// Create current user feed
-	document.addEventListener("scroll", delayGetNextPost);
-	await getNextPost();
-}
 
 // Creates the user profile page 
 async function createUserProfile(currentUser) {
@@ -260,6 +186,110 @@ async function createUserProfile(currentUser) {
    	}
 
 }
+
+// Gets the current user's feed (via local storage auth token)
+async function createUserFeed() {
+	const header = document.getElementsByClassName("banner")[0];
+	const username = document.getElementById('username');
+	const largefeed = document.getElementById('large-feed');
+	largefeed.innerHTML = "";
+	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
+
+	// // CAN ACTIVATE THIS IF WE WANT TO REMOVE REGISTER FIELDS 
+	// // This if statement is only activated on the first login since we remove 
+	// // the name email and registerButton fields
+	// var name = document.getElementById("name");
+	// var email = document.getElementById("email");
+	// var registerButton = document.getElementById("registerButton");
+	// if (name && email && registerButton) {
+	// 	// removing name, email and register fields
+	// 	header.removeChild(name);
+	// 	header.removeChild(email);
+	// 	header.removeChild(registerButton);
+	// }
+
+	// Create current user feed
+	document.addEventListener("scroll", delayGetNextPost);
+	await getNextPost();
+}
+
+// Creates the user page (basically a user profile + the user's posts)
+async function createUserPage(user) {
+	//console.log(user);
+	console.log(user);
+	const userDetails = await getUserByName(user);
+	createUserProfile(userDetails);
+	const posts = userDetails.posts;
+	for (var i = posts.length-1; i >= 0 ; i--) {
+		const post = await getPost(posts[i]);
+		const postElement = createPostTile(post);
+		addPostEventListeners(postElement);
+		largefeed.appendChild(postElement);
+	}
+}
+
+// This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
+// only once when nearing the end of the page.
+var timer;
+function delayGetNextPost() {
+	if (timer) {
+		clearTimeout(timer);
+	}
+	timer = setTimeout(getNextPost, 100);
+}
+
+async function getNextPost() {
+    var lastDiv = document.getElementsByTagName("footer")[0];
+    var lastDivOffset = lastDiv.offsetTop + lastDiv.clientHeight;
+    var pageOffset = window.pageYOffset + window.innerHeight;
+
+    if (pageOffset > lastDivOffset - 20) {
+    	await getCurrentFeed().then(feed => feed.posts)
+    	.then(posts => posts[0])
+    	.then(post => {
+    		const postElement = createPostTile(post);
+    		largefeed.appendChild(postElement);
+    		addPostEventListeners(postElement);
+  
+    	});
+        // var newDiv = document.createElement("div");
+        // newDiv.innerHTML = "my awesome new div";
+        // lastDiv.appendChild(newDiv);
+        setTimeout(getNextPost, 100);
+    }
+};
+
+function addPostEventListeners(postElement){
+	// add event listeners to like buttons
+	const likeButton = postElement.getElementsByClassName('likeButton')[0];
+	likeButton.addEventListener('click', likePost);
+
+	// add event listeners to toggle show comments/likes
+	const listButtons = postElement.getElementsByClassName('toggleList');
+	for (var i = 0; i < listButtons.length; i++) {
+		listButtons[i].addEventListener('click', toggleList);
+	}
+
+	// add event listeners to allow comments to be made
+	const commentBox = postElement.getElementsByClassName('commentBox')[0];
+	commentBox.addEventListener('keypress', function (e) {
+	    var key = e.which || e.keyCode;
+	    if (key === 13) { // 13 is enter
+	      	commentPost(e);
+	    }
+	});
+
+	const title = postElement.getElementsByClassName('post-title')[0]
+	const poster = title.textContent;
+	title.addEventListener('click', function() {getUserPage()});
+}
+
+function getUserPage() {
+	//console.log(event.target);
+	const postElement = event.target
+	createUserPage(postElement.innerText);	//textcontent is the username of the poster
+}
+
 
 
 

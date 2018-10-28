@@ -24,4 +24,6 @@ Bugfixes for infinite scroll
 
 28/10/18	12am - 1.15am 		Can update user profile now + refactored code to make it neater and have less duplicated code. Refactored code made it easier to also implement fragment based url routing which is functional except for user pages (not implemented)
 
+28/10/18	1.30am - 2.30am 	User pages implemented via url fragmentation
 
+28/10/18	4.25pm - 4.35pm		Finished up user pages, can click on a post's title to go to that posters userpage

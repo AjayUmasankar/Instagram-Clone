@@ -440,10 +440,10 @@ function addPostEventListeners(postElement){
 
 	const title = postElement.getElementsByClassName('post-title')[0]
 	const poster = title.textContent;
-	title.addEventListener('click', function() {getUserPage()});
+	title.addEventListener('click', function(event) {getUserPage(event)});
 }
 
-async function getUserPage() {
+async function getUserPage(event) {
 	const postElement = event.target;
 	createUserPage(await getUserByUsernameString(postElement.innerText));	//innerText is the username of the poster
 }

@@ -45,7 +45,7 @@ export function createViewPostTile(post) {
 
 
     // Like button
-    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton", }));// follow icon
+    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton", style: 'display:none'}));// follow icon
   
     // Number of likes/who liked this post
     const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc', style: 'display:none'});

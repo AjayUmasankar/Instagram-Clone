@@ -135,6 +135,25 @@ async function getPost(id) {
 
 // Creates the user profile page, given an array with user's details (GET /USER/)
 async function createUserProfile(user) {
+	createBasicDescription(user);
+	const followingElement = document.getElementById('followingElement');
+    const expandFollowing = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    const followingList = createElement('div', null, {class:"list"});
+    user.following.map(userID => 
+   		{
+     		const username = getUserById(userID)
+    					 	.then(user => {
+    					 	followingList.appendChild(createElement('li', `${user.username}`, {class:"username"}));
+    					 	});
+    	});
+    followingElement.appendChild(expandFollowing);
+    followingElement.appendChild(followingList);
+    followingList.hidden = true;
+    expandFollowing.addEventListener('click', toggleList);
+}
+
+// Create basic description of user (that is common to profile and user page)
+async function createBasicDescription(user) {
 	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
 	//const user = await getuser();
 	console.log(user);
@@ -151,20 +170,7 @@ async function createUserProfile(user) {
     section.appendChild(createElement('p', `Followers: ${user.followed_num}`, {class: 'post-desc'}));
 
     // users that we follow is shown as a list
-    const followingElement = createElement('p', `${user.following.length} following`, {class: 'post-desc'});
-    const expandFollowing = createElement('i', "expand_more", {class:"material-icons list"});
-    const followingList = createElement('div', null, {id:"list"});
-    user.following.map(userID => 
-   		{
-     		const username = getUserById(userID)
-    					 	.then(user => {
-    					 	followingList.appendChild(createElement('li', `${user.username}`, {class:"username"}));
-    					 	});
-    	});
-    followingElement.appendChild(expandFollowing);
-    followingElement.appendChild(followingList);
-    followingList.hidden = false;
-    expandFollowing.addEventListener('click', toggleList);
+    const followingElement = createElement('p', `${user.following.length} following`, {class: 'post-desc', id: 'followingElement'});
     section.appendChild(followingElement);
 
     // using list of user posts, get total no. of likes and comments.
@@ -197,13 +203,10 @@ async function createUserProfile(user) {
 	    section.appendChild(createElement('p', `Post is shown below:`, {class:'post-desc'}));
 	    section.appendChild(createViewPostTile(mostLiked));
    	}
-
 }
 
 // Gets the current user's feed (via local storage auth token)
 async function createUserFeed() {
-	const header = document.getElementsByClassName("banner")[0];
-	const username = document.getElementById('username');
 	const largefeed = document.getElementById('large-feed');
 	largefeed.innerHTML = "";
 	fed = 0; // How many posts have been fed already, to keep track of infinite scroll
@@ -226,10 +229,11 @@ async function createUserFeed() {
 	await getNextPost();
 }
 
+
 // Creates the user page (basically a user profile + the user's posts) given an array with user details
 async function createUserPage(user) {
 	document.removeEventListener("scroll", delayGetNextPost); // stops infinite scroll
-	createUserProfile(user);
+	createBasicDescription(user);
 	const posts = user.posts;
 	for (var i = posts.length-1; i >= 0 ; i--) {
 		const post = await getPost(posts[i]);
@@ -238,6 +242,12 @@ async function createUserPage(user) {
 		largefeed.appendChild(postElement);
 	}
 }
+
+// // combines createPostTile and addding event listeners to a post tile
+// // takes in a post (GET /POST/)
+// function createPost(post) {
+
+// }
 
 // This gets rid of spam inputs when you scroll and effectively triggers getNextPost()
 // only once when nearing the end of the page.
@@ -255,10 +265,25 @@ async function getNextPost() {
     var pageOffset = window.pageYOffset + window.innerHeight;
 
     if (pageOffset > lastDivOffset - 20) {
-    	await getCurrentFeed().then(feed => feed.posts)
+    	await getCurrentFeed(fed++).then(feed => feed.posts)
     	.then(posts => posts[0])
     	.then(post => {
     		const postElement = createPostTile(post);
+    		const likeList = postElement.getElementsByClassName('list')[0];
+    		post.meta.likes.map(userID => {
+    			getUserById(userID).then(user => user.username)
+    			.then(username => {
+    				likeList.appendChild(createElement('li', `${username}`, {class:"username"}));
+    			});
+    		});
+    		
+    		//user.following.map(userID => 
+   			// 	{
+     		// 	const username = getUserById(userID)
+    		// 			 	.then(user => {
+    		// 			 	followingList.appendChild(createElement('li', `${user.username}`, {class:"username"}));
+    		// 			 	});
+    		// });
     		largefeed.appendChild(postElement);
     		addPostEventListeners(postElement);
   
@@ -270,18 +295,41 @@ async function getNextPost() {
     }
 };
 
+async function deletePost() {
+	const postElement = event.target.parentNode;
+	const id = postElement.id;
+	const token = localStorage.getItem("token");
+	const options = {
+						method: "DELETE",
+						headers: 
+								{
+									'Authorization': `Token ${token}`,
+									"Content-Type": "application/json"
+								},
+					}
+	const deletePostResult = await api.makeAPIRequest(`post/?id=${id}`, options);
+	if (deletePostResult.message != "success") {
+		window.alert(deletePostResult.message);
+	} else {
+		window.alert(`Post successfully deleted`);
+	}
+	console.log(deletePostResult);
+}
+
 function addPostEventListeners(postElement){
-	// add event listeners to like buttons
+	// add event listener to like button
 	const likeButton = postElement.getElementsByClassName('likeButton')[0];
 	likeButton.addEventListener('click', likePost);
-
+	// add event listener to delete button
+	const deleteButton = postElement.getElementsByClassName('deleteButton')[0];
+	deleteButton.addEventListener('click', deletePost);
 	// add event listeners to toggle show comments/likes
 	const listButtons = postElement.getElementsByClassName('toggleList');
 	for (var i = 0; i < listButtons.length; i++) {
 		listButtons[i].addEventListener('click', toggleList);
 	}
 
-	// add event listeners to allow comments to be made
+	// add event listener to allow comments to be made
 	const commentBox = postElement.getElementsByClassName('commentBox')[0];
 	commentBox.addEventListener('keypress', function (e) {
 	    var key = e.which || e.keyCode;
@@ -295,9 +343,9 @@ function addPostEventListeners(postElement){
 	title.addEventListener('click', function() {getUserPage()});
 }
 
-function getUserPage() {
-	const postElement = event.target
-	createUserPage(postElement.innerText);	//textcontent is the username of the poster
+async function getUserPage() {
+	const postElement = event.target;
+	createUserPage(await getUserByUsernameString(postElement.innerText));	//innerText is the username of the poster
 }
 
 
@@ -341,7 +389,27 @@ async function loginSetup() {
 	followButton.style.display = '';
 	loginButton.style.display = 'none';
 
+	getCurrentFeed(0)
+	.then(feed => feed.posts[0])
+	.then(post =>  {
+		console.log(post);
+		localStorage.setItem("latestPostID", post.id);
+	});
+	setInterval(checkNewPost, 1000);
+}
 
+function checkNewPost() {
+	getCurrentFeed(0)
+	.then(feed => feed.posts[0])
+	.then(post => {
+		const latestPostID = localStorage.getItem("latestPostID");
+		//console.log(latestPostID);
+		//console.log(post.id);
+		if (post.id != latestPostID) {
+			window.alert("One of your followers has a new post!");
+			localStorage.setItem("latestPostID", post.id);
+		}
+	});
 }
 
 // Uses the username and password fields to attempt to login
@@ -536,7 +604,7 @@ async function commentPost(event) {
 // change icon of the arrow
 function toggleList(event) {
 	const parentNode = event.target.parentNode;
-	console.log(parentNode);
+	//console.log(parentNode);
 	const commentList = parentNode.getElementsByClassName('list')[0];
 	if (commentList.hidden == true) {
 		event.target.innerText = "expand_less";
@@ -569,7 +637,7 @@ async function likePost(event) {
 }
 
 // Gets current user's feed
-async function getCurrentFeed() {
+async function getCurrentFeed(p) {
 	const token = localStorage.getItem("token");
 	const options = {
 						method: "GET",
@@ -579,8 +647,8 @@ async function getCurrentFeed() {
 									"Content-Type": "application/json"
 								},
 					}
-	const feedResult = await api.makeAPIRequest(`user/feed?p=${fed}&n=1`, options);
-	fed += 1;
+	const feedResult = await api.makeAPIRequest(`user/feed?p=${p}&n=1`, options);
+
 	return feedResult;
 }
 

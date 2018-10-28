@@ -49,11 +49,15 @@ export function createPostTile(post) {
     // Like button
     section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton"}));// follow icon
     
+    // Like button
+    section.appendChild(createElement('li', "Click to Delete", {class: "nav-item deleteButton"}));// follow icon
+    
+
     // Number of likes/who liked this post
     const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'});
-    var toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    var toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
     var list = createElement('div', null, {class:"list"});
-    post.meta.likes.map(userID => list.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    //post.meta.likes.map(userID => list.appendChild(createElement('li', `${userID}`, {class:"userID"})));
     likeElement.appendChild(toggleList);
     likeElement.appendChild(list);
     list.hidden = false;
@@ -62,7 +66,7 @@ export function createPostTile(post) {
 
     // How many comments the post has
     const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
-    toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
     list = createElement('div', null, {class:"list"});
     post.comments.map(comment => {
         const author = comment.author;
@@ -97,7 +101,7 @@ export function createPostTile(post) {
 
 }
 
-
+// used for user pages, removes likeButton, deleteButton and comments
 export function createViewPostTile(post) {
     var section = createElement('section', null, { class: 'post', id:post.id });
 
@@ -111,7 +115,7 @@ export function createViewPostTile(post) {
   
     // Number of likes/who liked this post
     const likeElement = createElement('p', `${post.meta.likes.length} likes`, {class: 'post-desc'});
-    var toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    var toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
     var list = createElement('div', null, {class:"list"});
     post.meta.likes.map(userID => list.appendChild(createElement('li', `${userID}`, {class:"userID"})));
     likeElement.appendChild(toggleList);
@@ -122,7 +126,7 @@ export function createViewPostTile(post) {
 
     // How many comments the post has
     const commentElement = createElement('p', `${post.comments.length} comments`, {class: 'post-desc'})
-    toggleList = createElement('i', "expand_more", {class:"material-icons toggleList"});
+    toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
     list = createElement('div', null, {class:"list"});
     post.comments.map(comment => {
         const author = comment.author;

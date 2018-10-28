@@ -20,8 +20,10 @@ header.style.display = 'table-cell';
 // creates a file uploader element and adds an event listener to the post button
 const nav = document.getElementsByClassName('nav')[0];
 const nav_item = document.getElementsByClassName('nav-item')[0];
+const postDesc = createElement('INPUT', "", {type: 'text', id: 'postDesc', value: 'Description'});
 const fileInput = createElement('input', "", {type: 'file', id: 'fileInput'});
 nav_item.appendChild(fileInput);
+nav_item.appendChild(postDesc);
 nav.style.display = 'none'
 
 // postButton
@@ -236,10 +238,14 @@ async function createUserPage(user) {
 	createBasicDescription(user);
 	const posts = user.posts;
 	for (var i = posts.length-1; i >= 0 ; i--) {
+		// essentially creates a feed but with a delete button for posts
 		const post = await getPost(posts[i]);
 		const postElement = createPostTile(post);
-		addPostEventListeners(postElement);
+		// const likeButton = postElement.getElementsByClassName('likeButton')[0];
+		// const deleteButton = createElement('li', "Click to Delete", {class: "nav-item deleteButton"});
+		// likeButton.parentNode.insertBefore(deleteButton, likeButton.nextSibling);
 		largefeed.appendChild(postElement);
+		addPostEventListeners(postElement);
 	}
 }
 
@@ -268,14 +274,14 @@ async function getNextPost() {
     	await getCurrentFeed(fed++).then(feed => feed.posts)
     	.then(posts => posts[0])
     	.then(post => {
+    		if (!post) {
+    			window.alert(`No more posts to load`);
+    			clearTimeout(getNextPost,100);
+    			return;
+    		}
     		const postElement = createPostTile(post);
     		const likeList = postElement.getElementsByClassName('list')[0];
-    		post.meta.likes.map(userID => {
-    			getUserById(userID).then(user => user.username)
-    			.then(username => {
-    				likeList.appendChild(createElement('li', `${username}`, {class:"username"}));
-    			});
-    		});
+
     		
     		//user.following.map(userID => 
    			// 	{
@@ -286,15 +292,113 @@ async function getNextPost() {
     		// });
     		largefeed.appendChild(postElement);
     		addPostEventListeners(postElement);
-  
+  			setTimeout(getNextPost, 100);
     	});
         // var newDiv = document.createElement("div");
         // newDiv.innerHTML = "my awesome new div";
         // lastDiv.appendChild(newDiv);
-        setTimeout(getNextPost, 100);
+
     }
 };
 
+
+/**
+ * Given a post, return a tile with the relevant data
+ * @param   {object}        post 
+ * @returns {HTMLElement}
+ */
+export function createPostTile(post) {
+    if (!post || !post.hasOwnProperty('id')) {
+        console.log(`No more new posts to create`);
+        return false;
+    }
+    var section = createElement('section', null, { class: 'post', id:post.id });
+    // who the post was made by
+    section.appendChild(createElement('h2', post.meta.author, { class: 'post-title' }));
+
+    // The post description text
+    section.appendChild(createElement('p', post.meta.description_text, {class: 'post-desc'}));
+
+    // The image itself
+    section.appendChild(createElement('img', null, 
+        { src: 'data:image/png;base64,'+post.src, alt: post.meta.description_text, class: 'post-image' }));
+  
+    // Like button
+    section.appendChild(createElement('li', "Click to Like", {class: "nav-item likeButton"}));// follow icon
+    
+
+  	
+
+    // Number of likes/who liked this post
+    const likeElement = createElement('p', `Likes`, {class: 'post-desc'});
+    var toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
+    const likeList = createElement('div', null, {class:"list"});
+    //post.meta.likes.map(userID => list.appendChild(createElement('li', `${userID}`, {class:"userID"})));
+    likeElement.appendChild(toggleList);
+    likeElement.appendChild(likeList);
+    likeList.hidden = false;
+    section.appendChild(likeElement);
+	post.meta.likes.map(userID => {
+		getUserById(userID).then(user => user.username)
+		.then(username => {
+			likeList.appendChild(createElement('li', `${username}`, {class:"username"}));
+		});
+	});
+
+    // How many comments the post has
+    const commentElement = createElement('p', `Comments`, {class: 'post-desc'})
+    toggleList = createElement('i', "expand_less", {class:"material-icons toggleList"});
+    const commentList = createElement('div', null, {class:"list"});
+    post.comments.map(comment => {
+        const author = comment.author;
+        const published = comment.published;
+        const authorComment = comment.comment;
+        list.appendChild(createElement('li', `${author}: ${authorComment}`, {class:"comment"}));
+    });
+    commentElement.appendChild(toggleList);
+    commentElement.appendChild(createElement('br', null));
+    commentElement.appendChild(list);
+    // comment text box
+    const comment = createElement('INPUT', "", {type: 'text', class: 'commentBox', value: 'comment'});
+    commentElement.appendChild(comment);
+    list.hidden = false;
+    section.appendChild(commentElement);
+
+    // when it was posted
+    const date = new Date(parseInt(post.meta.published)*1000);
+    var curYear = date.getFullYear();
+    var curMonth = date.getMonth();
+    var curDate = date.getDate();
+    var curHour = date.getHours();
+    var curMinute = date.getMinutes();
+    //console.log(typeof curMinute);
+
+    var curSecond = date.getSeconds();
+    var reqTime = curDate;
+    reqTime += "/" + curMonth;
+    reqTime += "/" + curYear + " ";
+    reqTime += curHour + ":";
+    //console.log(curMinute.toString.length);
+    //console.log(curSecond.toString.length);
+    if (curMinute.toString().length == 1) {
+        reqTime += "0" + curMinute + ":";
+    } else {
+        reqTime += curMinute + ":";
+    }
+
+    if (curSecond.toString().length == 1) {
+    	//console.log(curSecond);
+        reqTime += "0" + curSecond;
+    } else {
+        reqTime += curSecond;
+    }
+
+    section.appendChild(createElement('p', reqTime, {class: 'post-desc'}));
+    return section;
+
+}
+
+// deletes a post by clicking on the delete button, whose parent has the unique postID.
 async function deletePost() {
 	const postElement = event.target.parentNode;
 	const id = postElement.id;
@@ -316,13 +420,16 @@ async function deletePost() {
 	console.log(deletePostResult);
 }
 
+// adds event listeners for like button, comment button, delete button (if it exists) and the lists of comments/likes
 function addPostEventListeners(postElement){
 	// add event listener to like button
 	const likeButton = postElement.getElementsByClassName('likeButton')[0];
 	likeButton.addEventListener('click', likePost);
 	// add event listener to delete button
 	const deleteButton = postElement.getElementsByClassName('deleteButton')[0];
-	deleteButton.addEventListener('click', deletePost);
+	if (deleteButton) { 
+		deleteButton.addEventListener('click', deletePost);
+	}
 	// add event listeners to toggle show comments/likes
 	const listButtons = postElement.getElementsByClassName('toggleList');
 	for (var i = 0; i < listButtons.length; i++) {
@@ -388,6 +495,10 @@ async function loginSetup() {
 	nav.style.display = ''
 	followButton.style.display = '';
 	loginButton.style.display = 'none';
+	name.style.display = 'none';
+	email.style.display = 'none';
+	registerButton.style.display = 'none';
+	password.style.display = 'none';
 
 	getCurrentFeed(0)
 	.then(feed => feed.posts[0])
@@ -470,7 +581,7 @@ async function getPosts(postIds) {
 async function postImage(base64) {
 	const user = document.getElementById('username').value;
 	const token = localStorage.getItem("token");
-	const description = "not yet implemented";
+	const description = postDesc.value;
 	const body = { "description_text": `${description}`, "src": `${base64}` };
 	const options = {
 						method: "POST",
@@ -496,7 +607,7 @@ async function getImage() {
 	const files = document.getElementById("fileInput").files;
 	console.log(files);
 	if (files.length < 1) {
-		console.log("No files");
+		window.alert("No file to post");
 		return false;
 	}
 	const file = files[0];
@@ -632,8 +743,13 @@ async function likePost(event) {
 	if (likeResult.message != "success") {
 		window.alert(likeResult.message);
 	} else {
-		const parentNode = event.target.parentNode;
-		parentNode.removeChild(event.target);
+		const postElement = event.target.parentNode;
+		const likeList = postElement.getElementsByClassName('list')[0];
+		getCurrentUser().then(user=>user.username)
+		.then(username => likeList.appendChild(createElement('li', `${username}`, 
+			{class:"username"})));
+
+		//parentNode.removeChild(event.target);
 		window.alert(`Post has been liked`);
 	}
 }

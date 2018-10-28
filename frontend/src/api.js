@@ -1,6 +1,6 @@
 // change this when you integrate with the real API, or when u start using the dev server
 const API_URL = 'http://localhost:5000'
-const STATIC_API_URL = 'http://localhost:8080/data'
+const STATIC_API_URL = 'http://localhost:8081/data'
 
 const getJSON = (path, options) => 
     fetch(path, options)

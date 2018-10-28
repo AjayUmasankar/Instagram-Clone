@@ -392,7 +392,7 @@ async function loginSetup() {
 	getCurrentFeed(0)
 	.then(feed => feed.posts[0])
 	.then(post =>  {
-		console.log(post);
+		//console.log(post);
 		localStorage.setItem("latestPostID", post.id);
 	});
 	setInterval(checkNewPost, 1000);
@@ -632,6 +632,8 @@ async function likePost(event) {
 	if (likeResult.message != "success") {
 		window.alert(likeResult.message);
 	} else {
+		const parentNode = event.target.parentNode;
+		parentNode.removeChild(event.target);
 		window.alert(`Post has been liked`);
 	}
 }
@@ -696,7 +698,7 @@ async function getUserById(id) {
 								},
 					}
 	const user = await api.makeAPIRequest(`user/?id=${id}`, options);
-	console.log(user);
+	//console.log(user);
 	return user;
 }
 

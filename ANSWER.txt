@@ -1,7 +1,0 @@
-fetch("https://localhost:5000/auth/login", {
-    headers: { Content-Type: 'application/json' },
-    method: 'POST',
-    body: { username: '', password: '' }
-})
-
-https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
